@@ -43,17 +43,18 @@ class PlayScreenViewModel @Inject constructor(
 
     init {
         Log.w(TAG, "$TAG: init")
-        appMediaController.viewModelInitialize { setController() }
+        appMediaController.viewModelInitialize { setController(null) }
         viewModelScope.launch {
             moviesRepository.getMovieDetail(playArgs.playId).map<Movie, PlayUiState> {
                 val movie = it.asMovieDetail()
                 mediaItemTree.initialize(movie)
                 PlayUiState.Success(movie)
             }.catch {
+                it.printStackTrace()
                 _playUiState.emit(PlayUiState.Failed(it))
             }.collectLatest {
                 _playUiState.emit(it)
-                setController()
+                setController((it as? PlayUiState.Success)?.movie?.id.toString())
             }
 
         }
@@ -63,24 +64,46 @@ class PlayScreenViewModel @Inject constructor(
         MutableStateFlow(PlayUiState.Loading())
     val playUiState: StateFlow<PlayUiState> get() = _playUiState
 
-    private fun setController() {
-        Log.d(TAG, "setController: $_controller")
+    private fun setController(movieId: String?) {
         val controller = _controller ?: return
-        _controller?.playWhenReady = true
-        viewModelScope.launch {
-            _playUiState.emit(_playUiState.value.update(playInfo = PlayInfo.Ideal(controller)))
-        }
+        controller.playWhenReady = false
         val state = _playUiState.value
         viewModelScope.launch {
-            _playUiState.emit(state.update(playInfo = if (controller.isPlaying) PlayInfo.Playing(
-                controller) else PlayInfo.Pausing(controller)))
+            _playUiState.emit(
+                _playUiState.value.update(
+                    playInfo = PlayInfo.Ideal(
+                        controller,
+                        fullScreen = state.playInfo?.fullScreen ?: false
+                    )
+                )
+            )
+        }
+        viewModelScope.launch {
+            _playUiState.emit(
+                state.update(
+                    playInfo = if (controller.isPlaying) PlayInfo.Playing(
+                        controller, fullScreen = state.playInfo?.fullScreen ?: false
+                    ) else PlayInfo.Pausing(
+                        controller,
+                        fullScreen = state.playInfo?.fullScreen ?: false
+                    )
+                )
+            )
         }
         controller.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
                 viewModelScope.launch {
-                    _playUiState.emit(state.update(playInfo = if (isPlaying) PlayInfo.Playing(
-                        controller) else PlayInfo.Pausing(controller)))
+                    _playUiState.emit(
+                        state.update(
+                            playInfo = if (isPlaying) PlayInfo.Playing(
+                                controller, fullScreen = state.playInfo?.fullScreen ?: false
+                            ) else PlayInfo.Pausing(
+                                controller,
+                                fullScreen = state.playInfo?.fullScreen ?: false
+                            )
+                        )
+                    )
                 }
             }
 
@@ -89,22 +112,50 @@ class PlayScreenViewModel @Inject constructor(
                 when (playbackState) {
                     Player.STATE_IDLE -> {
                         viewModelScope.launch {
-                            _playUiState.emit(state.update(playInfo = PlayInfo.Ideal(controller)))
+                            _playUiState.emit(
+                                state.update(
+                                    playInfo = PlayInfo.Ideal(
+                                        controller,
+                                        fullScreen = state.playInfo?.fullScreen ?: false
+                                    )
+                                )
+                            )
                         }
                     }
                     Player.STATE_BUFFERING -> {
                         viewModelScope.launch {
-                            _playUiState.emit(state.update(playInfo = PlayInfo.Buffering(controller)))
+                            _playUiState.emit(
+                                state.update(
+                                    playInfo = PlayInfo.Buffering(
+                                        controller,
+                                        fullScreen = state.playInfo?.fullScreen ?: false
+                                    )
+                                )
+                            )
                         }
                     }
                     Player.STATE_READY -> {
                         viewModelScope.launch {
-                            _playUiState.emit(state.update(playInfo = PlayInfo.Ready(controller)))
+                            _playUiState.emit(
+                                state.update(
+                                    playInfo = PlayInfo.Ready(
+                                        controller,
+                                        fullScreen = state.playInfo?.fullScreen ?: false
+                                    )
+                                )
+                            )
                         }
                     }
                     Player.STATE_ENDED -> {
                         viewModelScope.launch {
-                            _playUiState.emit(state.update(playInfo = PlayInfo.Ending(controller)))
+                            _playUiState.emit(
+                                state.update(
+                                    playInfo = PlayInfo.Ending(
+                                        controller,
+                                        fullScreen = state.playInfo?.fullScreen ?: false
+                                    )
+                                )
+                            )
                         }
                     }
                 }
@@ -116,17 +167,26 @@ class PlayScreenViewModel @Inject constructor(
             }
 
         })
+        val future = movieId?.let { controller.getChildren(it, 0, Int.MAX_VALUE, null) }
+        future?.addListener({
+            val mediaList = future.get().value?.toList() ?: emptyList()
+            controller.setMediaItems(mediaList, false)
+            controller.prepare()
+        }, MoreExecutors.directExecutor())
     }
 
     fun play(item: PlaysSet) {
         val controller = _controller ?: return
-        val future = controller.getChildren(item.movieId.toString(), 0, Int.MAX_VALUE, null)
-        future.addListener({
-            val mediaList = future.get().value?.toList() ?: emptyList()
-            controller.setMediaItems(mediaList, false)
-            controller.seekToDefaultPosition(item.index)
-            controller.prepare()
-        }, MoreExecutors.directExecutor())
+        controller.seekToDefaultPosition(item.index)
+        controller.prepare()
+        controller.play()
+//        val future = controller.getChildren(item.movieId.toString(), 0, Int.MAX_VALUE, null)
+//        future.addListener({
+//            val mediaList = future.get().value?.toList() ?: emptyList()
+//            controller.setMediaItems(mediaList, false)
+//            controller.seekToDefaultPosition(item.index)
+//            controller.prepare()
+//        }, MoreExecutors.directExecutor())
 //        if (controller.mediaItemCount > item.index) {
 //
 //        }

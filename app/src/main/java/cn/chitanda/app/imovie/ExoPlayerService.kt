@@ -53,9 +53,10 @@ class ExoPlayerService : MediaLibraryService() {
 
     @androidx.media3.common.util.UnstableApi
     private fun initializeSessionAndPlayer() {
-        player = ExoPlayer.Builder(this).setTrackSelector(DefaultTrackSelector(this).apply {
-            setParameters(buildUponParameters().setMaxVideoSizeSd())
-        })
+        player = ExoPlayer.Builder(this)
+//            .setTrackSelector(DefaultTrackSelector(this).apply {
+//                setParameters(buildUponParameters().setMaxVideoSizeSd())
+//            })
 //            .setMediaSourceFactory(DefaultMediaSourceFactory(this))
 //            .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
             .setAudioAttributes(AudioAttributes.DEFAULT, true).build()
@@ -77,8 +78,10 @@ class ExoPlayerService : MediaLibraryService() {
             Log.d(TAG, "onConnect: ")
             val connectionResult = super.onConnect(session, controller)
             val availableSessionCommands = connectionResult.availableSessionCommands.buildUpon()
-            return MediaSession.ConnectionResult.accept(availableSessionCommands.build(),
-                connectionResult.availablePlayerCommands)
+            return MediaSession.ConnectionResult.accept(
+                availableSessionCommands.build(),
+                connectionResult.availablePlayerCommands
+            )
         }
 
 
@@ -108,8 +111,11 @@ class ExoPlayerService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<MediaItem>> {
             Log.d(TAG, "onGetLibraryRoot: ")
             val item =
-                mediaItemTree.getRootItem() ?: return Futures.immediateFuture(LibraryResult.ofError(
-                    LibraryResult.RESULT_ERROR_BAD_VALUE))
+                mediaItemTree.getRootItem() ?: return Futures.immediateFuture(
+                    LibraryResult.ofError(
+                        LibraryResult.RESULT_ERROR_BAD_VALUE
+                    )
+                )
             return Futures.immediateFuture(LibraryResult.ofItem(item, null))
         }
 
@@ -120,7 +126,8 @@ class ExoPlayerService : MediaLibraryService() {
         ): ListenableFuture<LibraryResult<MediaItem>> {
             Log.d(TAG, "onGetItem: ")
             val item = mediaItemTree.getItem(mediaId) ?: return Futures.immediateFuture(
-                LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE))
+                LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE)
+            )
             return Futures.immediateFuture(LibraryResult.ofItem(item, null))
         }
 

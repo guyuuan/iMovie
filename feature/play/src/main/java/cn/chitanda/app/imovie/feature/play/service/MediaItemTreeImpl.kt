@@ -30,8 +30,8 @@ class MediaItemTreeImpl @Inject constructor() : MediaItemTree {
     private fun buildMediaItem(set: PlaysSet, movie: MovieDetail): MediaItem {
         val metaData =
             MediaMetadata.Builder()
-                .setTitle(movie.name)
-                .setSubtitle(set.name)
+                .setTitle("${movie.name}-${set.name}")
+//                .setSubtitle(set.name)
                 .setFolderType(FOLDER_TYPE_NONE)
                 .setGenre("Video")
                 .setArtworkUri(Uri.parse(movie.pic))

@@ -7,6 +7,8 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.util.Log
 import android.widget.FrameLayout
+import androidx.activity.addCallback
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -32,7 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -47,13 +49,13 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.module.MovieDetail
 import cn.chitanda.app.imovie.core.module.PlaysSet
 import coil.compose.AsyncImage
+import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 /**
@@ -61,24 +63,45 @@ import com.google.accompanist.systemuicontroller.rememberSystemUiController
  *@createTime: 2022/11/22 16:51
  *@description:
  **/
-@OptIn(ExperimentalLifecycleComposeApi::class)
+
 @Composable
 fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val uiState by viewModel.playUiState.collectAsState()
     val playInfo = uiState.playInfo
     val sizeClass = LocalWindowSizeClass.current.widthSizeClass
-    val fullScreen = uiState.playInfo?.fullScreen ?: false
+    val fullScreen = playInfo?.fullScreen ?: false
+    val systemBarController = rememberSystemUiController()
+    LaunchedEffect(key1 = fullScreen) {
+        Log.d("HideBar", "fullscreen :$fullScreen ")
+        Log.d("HideBar", "play info :$playInfo ")
+        if (fullScreen) {
+            hideSystemBar(systemBarController)
+        } else {
+            showSystemBar(systemBarController)
+        }
+    }
+    val activity = LocalContext.current as Activity
+
+    val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    LaunchedEffect(key1 = owner) {
+        owner?.addCallback(enabled = fullScreen) {
+
+            viewModel.setFullScreen(false)
+            showSystemBar(systemBarController)
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
     Surface {
         when {
-            sizeClass > WindowWidthSizeClass.Compact -> {
-                Row(modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+            sizeClass > WindowWidthSizeClass.Compact || fullScreen -> {
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     VideoView(
                         modifier = Modifier.fillMaxSize(),
                         viewModel = viewModel,
                         playInfo = playInfo,
-                        fullScreen = fullScreen,
+                        fullscreen = fullScreen
                     )
+                }
 //                    AnimatedVisibility(visible = !fullScreen) {
 //                        Surface(modifier = Modifier
 //                            .fillMaxHeight()
@@ -110,34 +133,44 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
 //                            }
 //                        }
 //                    }
-                }
             }
             else -> {
-                Column(modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
                     VideoView(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .windowInsetsPadding(WindowInsets.statusBars)
+                            .aspectRatio(16 / 9f),
                         viewModel = viewModel,
                         playInfo = playInfo,
-                        fullScreen = fullScreen,
+                        fullscreen = false
                     )
                     AnimatedVisibility(visible = !fullScreen) {
-                        Surface(modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
                             when (uiState) {
                                 is PlayUiState.Success -> {
-                                    MovieDetailBody(modifier = Modifier
-                                        .padding(horizontal = 16.dp)
-                                        .fillMaxSize(), playInfo = playInfo, onPlaysSetClick = {
-                                        viewModel.play(it)
-                                    }, movie = (uiState as PlayUiState.Success).movie)
+                                    MovieDetailBody(
+                                        modifier = Modifier
+                                            .padding(horizontal = 16.dp)
+                                            .fillMaxSize(), playInfo = playInfo, onPlaysSetClick = {
+                                            viewModel.play(it)
+                                        }, movie = (uiState as PlayUiState.Success).movie
+                                    )
                                 }
                                 is PlayUiState.Failed -> {
                                     Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-                                        Text(text = (uiState as PlayUiState.Failed).error.toString(),
+                                        Text(
+                                            text = (uiState as PlayUiState.Failed).error.toString(),
                                             style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.error)
+                                            color = MaterialTheme.colorScheme.error
+                                        )
                                     }
                                 }
                                 is PlayUiState.Loading -> {
@@ -163,56 +196,45 @@ fun VideoView(
     playInfo: PlayInfo?,
     viewModel: PlayScreenViewModel,
     modifier: Modifier = Modifier,
-    fullScreen: Boolean,
+    fullscreen: Boolean
 ) {
-//    val isLandSpace = LocalWindowSizeClass.current.widthSizeClass > WindowWidthSizeClass.Compact
-    val systemBarController = rememberSystemUiController()
-    fun hideSystemBar() {
-        systemBarController.isSystemBarsVisible = false
-        systemBarController.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-    }
-
-    fun showSystemBar() {
-        systemBarController.isSystemBarsVisible = true
-    }
-
     val activity = LocalContext.current as Activity
     Surface(color = Color.Black) {
-        AndroidView(modifier = if (fullScreen) {
-            Modifier.fillMaxSize()
-        } else {
-            modifier
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .aspectRatio(16 / 9f)
-        }, factory = {
+        AndroidView(modifier = modifier, factory = {
             PlayerView(it).apply {
-                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_WIDTH
-                layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT)
-                setFullscreenButtonClickListener { fullScreen ->
-                    viewModel.setFullScreen(fullScreen && activity.requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
+                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                showController()
+                setFullscreenButtonClickListener {
+                    viewModel.setFullScreen(!fullscreen)
+                    if (!fullscreen) {
+                        activity.requestedOrientation =
+                            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    } else {
+                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    }
                 }
             }
         }) {
             it.player = playInfo?.mediaController
         }
     }
-    DisposableEffect(key1 = fullScreen) {
-        Log.d(TAG, "VideoView: full screen = $fullScreen")
-        if (fullScreen) {
-            hideSystemBar()
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        } else {
-            showSystemBar()
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        }
-        onDispose {
-            Log.d(TAG, "VideoView: onDispose  full screen = $fullScreen")
-            showSystemBar()
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR
-        }
-    }
+}
+
+private fun hideSystemBar(systemBarController: SystemUiController) {
+    Log.d("HideBar", "hideSystemBar: ")
+    systemBarController.systemBarsBehavior =
+        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+    systemBarController.isSystemBarsVisible = false
+
+}
+
+private fun showSystemBar(systemBarController: SystemUiController) {
+    Log.d("HideBar", "showSystemBar: ")
+    systemBarController.isSystemBarsVisible = true
 }
 
 @Composable
@@ -223,18 +245,22 @@ private fun MovieDetailBody(
     playInfo: PlayInfo?,
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(24.dp)) {
-        MovieTitle(modifier = Modifier
-            .fillMaxWidth()
-            .height(200.dp),
+        MovieTitle(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
             contentPadding = PaddingValues(16.dp),
             name = movie.name,
             pic = movie.pic,
             actor = movie.actor,
-            director = movie.director)
-        MoviePlaySets(sets = movie.playSets,
+            director = movie.director
+        )
+        MoviePlaySets(
+            sets = movie.playSets,
             modifier = Modifier.fillMaxWidth(),
             playInfo = playInfo,
-            onClick = onPlaysSetClick)
+            onClick = onPlaysSetClick
+        )
     }
 }
 
@@ -248,31 +274,43 @@ private fun MovieTitle(
     director: String,
 ) {
     Surface(modifier = modifier, tonalElevation = 8.dp, shape = MaterialTheme.shapes.large) {
-        Row(modifier = Modifier
-            .padding(contentPadding)
-            .fillMaxSize(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            AsyncImage(model = pic,
+        Row(
+            modifier = Modifier
+                .padding(contentPadding)
+                .fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            AsyncImage(
+                model = pic,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.medium)
                     .fillMaxHeight()
                     .aspectRatio(3 / 4f, matchHeightConstraintsFirst = true),
-                contentDescription = name)
-            Column(modifier = Modifier
-                .padding(2.dp)
-                .weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(text = name,
+                contentDescription = name
+            )
+            Column(
+                modifier = Modifier
+                    .padding(2.dp)
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = name,
                     style = MaterialTheme.typography.titleLarge,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis)
-                Text(text = "导演: $director",
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "导演: $director",
                     style = MaterialTheme.typography.bodyMedium,
-                    overflow = TextOverflow.Ellipsis)
-                Text(text = "演员: $actor",
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "演员: $actor",
                     style = MaterialTheme.typography.bodyMedium,
-                    overflow = TextOverflow.Ellipsis)
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
@@ -287,13 +325,17 @@ private fun MoviePlaySets(
     onClick: (PlaysSet) -> Unit,
 ) {
     Surface(modifier = modifier, tonalElevation = 8.dp, shape = MaterialTheme.shapes.large) {
-        LazyRow(modifier = Modifier.fillMaxWidth(),
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
             items(sets) { set ->
-                PlaySetItem(playSet = set,
+                PlaySetItem(
+                    playSet = set,
                     isSelected = set.mediaId == playInfo?.mediaController?.currentMediaItem?.mediaId && playInfo is PlayInfo.Playing,
-                    onClick = onClick)
+                    onClick = onClick
+                )
             }
         }
     }
@@ -307,14 +349,18 @@ fun PlaySetItem(
     onClick: (PlaysSet) -> Unit = {},
 ) {
 
-    Surface(modifier = modifier then Modifier.clickable {
-        onClick(playSet)
-    },
+    Surface(
+        modifier = modifier then Modifier.clickable {
+            onClick(playSet)
+        },
         shape = CircleShape,
         color = if (isSelected) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-        tonalElevation = 8.dp) {
-        Text(text = playSet.name,
+        tonalElevation = 8.dp
+    ) {
+        Text(
+            text = playSet.name,
             modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
-            style = MaterialTheme.typography.bodyMedium)
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }

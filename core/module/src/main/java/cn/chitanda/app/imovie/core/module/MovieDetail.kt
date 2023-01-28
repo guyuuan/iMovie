@@ -26,21 +26,27 @@ data class PlaysSet(
 
 fun Movie.asMovieDetail(): MovieDetail {
 
-    val urls = checkNotNull(url).split("#")
+    val urls = checkNotNull(url).split("#").filter {
+        it.isNotEmpty()
+    }
     val playSet = List(urls.size) {
         val splits = urls[it].split("$")
-        PlaysSet(name = splits[0],
+        PlaysSet(
+            name = splits[0],
             url = splits[1],
             mediaId = "$id-${splits[0]}",
             movieId = id,
-            index = it)
+            index = it
+        )
     }
-    return MovieDetail(id = id,
+    return MovieDetail(
+        id = id,
         name = name,
         pic = pic,
         actor = actor,
         director = director,
         description = description,
         duration = duration,
-        playSets = playSet)
+        playSets = playSet
+    )
 }
