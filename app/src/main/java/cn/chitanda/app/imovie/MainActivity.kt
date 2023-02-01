@@ -2,7 +2,6 @@ package cn.chitanda.app.imovie
 
 import android.annotation.SuppressLint
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
@@ -40,10 +39,10 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val navController = rememberNavController()
             IMovieTheme(calculateWindowSizeClass(activity = this)) {
-                Scaffold{
+                Scaffold {
                     NavHost(
                         navController = navController,
-                    startDestination = homeNavigationRoute
+                        startDestination = homeNavigationRoute
 //                        startDestination = "/"
                     ) {
                         homeScreen { id ->
@@ -51,8 +50,10 @@ class MainActivity : AppCompatActivity() {
                         }
                         playScreen()
                         composable("/") {
-                            Box(modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Text(text = LocalWindowSizeClass.current.widthSizeClass.toString())
                             }
                         }
