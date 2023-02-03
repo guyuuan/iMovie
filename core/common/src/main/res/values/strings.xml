@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recently_update_label">最近更新</string>
+    <string name="history_screen_label">历史记录</string>
+    <string name="search_screen_label">搜索</string>
+</resources>

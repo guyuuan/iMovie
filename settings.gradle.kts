@@ -1,4 +1,5 @@
 @file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     includeBuild("build-logic")
     repositories {
@@ -26,3 +27,6 @@ include( ":core:module")
 include( ":core:network")
 include( ":feature:home")
 include( ":feature:play")
+include(":feature:search")
+include(":feature:history")
+include(":feature:recently")

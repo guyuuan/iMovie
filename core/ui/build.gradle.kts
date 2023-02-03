@@ -17,6 +17,7 @@ dependencies {
     implementation(libs.coil.kt.compose)
     implementation(libs.kotlinx.datetime)
 
+
     api(libs.androidx.compose.foundation)
     api(libs.androidx.compose.foundation.layout)
     api(libs.androidx.compose.material.iconsExtended)
@@ -29,4 +30,8 @@ dependencies {
     api(libs.androidx.compose.runtime.livedata)
     api(libs.androidx.metrics)
     api(libs.androidx.tracing.ktx)
+    api(libs.androidx.navigation.compose)
+    api(libs.androidx.hilt.navigation.compose)
+
+
 }

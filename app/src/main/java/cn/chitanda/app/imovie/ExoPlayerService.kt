@@ -54,11 +54,6 @@ class ExoPlayerService : MediaLibraryService() {
     @androidx.media3.common.util.UnstableApi
     private fun initializeSessionAndPlayer() {
         player = ExoPlayer.Builder(this)
-//            .setTrackSelector(DefaultTrackSelector(this).apply {
-//                setParameters(buildUponParameters().setMaxVideoSizeSd())
-//            })
-//            .setMediaSourceFactory(DefaultMediaSourceFactory(this))
-//            .setVideoScalingMode(C.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
             .setAudioAttributes(AudioAttributes.DEFAULT, true).build()
 
         val sessionActivityPendingIntent = TaskStackBuilder.create(this).run {

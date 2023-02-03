@@ -10,3 +10,9 @@ android{
 dependencies {
     implementation(libs.accompanist.flowlayout)
 }
+
+dependencies {
+    api(project(":feature:recently"))
+    api(project(":feature:search"))
+    api(project(":feature:history"))
+}

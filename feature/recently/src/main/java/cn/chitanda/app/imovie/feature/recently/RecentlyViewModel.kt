@@ -1,4 +1,4 @@
-package cn.chitanda.app.imovie.feature.home
+package cn.chitanda.app.imovie.feature.recently
 
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -21,18 +21,18 @@ import javax.inject.Inject
 private const val TAG = "HomeViewModel"
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
+class RecentlyViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val moviesRepository: MoviesRepository,
 ) : ViewModel() {
-    val homeState: StateFlow<HomeUiState> =
-        moviesRepository.getHomePageData().map<HomeData, HomeUiState> { homeData ->
-            HomeUiState.Shown(homeData)
+    val homeState: StateFlow<RecentlyUiState> =
+        moviesRepository.getHomePageData().map<HomeData, RecentlyUiState> { homeData ->
+            RecentlyUiState.Shown(homeData)
         }.catch {
-            emit(HomeUiState.LoadingFailed(it))
+            emit(RecentlyUiState.LoadingFailed(it))
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
-            initialValue = HomeUiState.Loading
+            initialValue = RecentlyUiState.Loading
         )
 }
