@@ -8,6 +8,7 @@ android {
 }
 dependencies {
     implementation(project(":core:module"))
+    implementation(libs.coil.kt)
     api(libs.androidx.media3.hls)
     api(libs.androidx.media3.exoplayer)
     api(libs.androidx.media3.ui)

@@ -7,10 +7,10 @@ import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
+import cn.chitanda.app.imovie.core.media.CoilBitmapLoader
 import cn.chitanda.app.imovie.core.media.MediaItemTree
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
@@ -66,6 +66,7 @@ class ExoPlayerService : MediaLibraryService() {
             getPendingIntent(0, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         }
         mediaSession = MediaLibrarySession.Builder(this, player, mediaSessionCallback)
+            .setBitmapLoader(CoilBitmapLoader(this.applicationContext))
             .setSessionActivity(sessionActivityPendingIntent).build()
 //        mediaSession = MediaLibrarySession.Builder(this, player, mediaSessionCallback).build()
     }
