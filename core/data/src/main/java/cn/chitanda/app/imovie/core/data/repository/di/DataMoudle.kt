@@ -1,7 +1,9 @@
 package cn.chitanda.app.imovie.core.data.repository.di
 
-import cn.chitanda.app.imovie.core.data.repository.MoviesRepositoryImp
+import cn.chitanda.app.imovie.core.data.repository.HistoryRepository
+import cn.chitanda.app.imovie.core.data.repository.HistoryRepositoryImp
 import cn.chitanda.app.imovie.core.data.repository.MoviesRepository
+import cn.chitanda.app.imovie.core.data.repository.MoviesRepositoryImp
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -21,5 +23,12 @@ interface DataMoudle {
     @Singleton
     fun bindMovieRepository(
         moviesRepository: MoviesRepositoryImp
-    ):MoviesRepository
+    ): MoviesRepository
+
+    @Binds
+    @Singleton
+    fun bindHistoryRepository(
+        historyRepository: HistoryRepositoryImp
+    ): HistoryRepository
+
 }

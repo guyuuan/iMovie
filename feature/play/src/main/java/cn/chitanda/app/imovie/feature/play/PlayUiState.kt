@@ -1,7 +1,8 @@
 package cn.chitanda.app.imovie.feature.play
 
 import androidx.media3.session.MediaController
-import cn.chitanda.app.imovie.core.module.MovieDetail
+import cn.chitanda.app.imovie.core.model.HistoryResource
+import cn.chitanda.app.imovie.core.model.MovieDetail
 
 /**
  *@author: Chen
@@ -10,25 +11,34 @@ import cn.chitanda.app.imovie.core.module.MovieDetail
  **/
 sealed interface PlayUiState {
     val playInfo: PlayInfo?
-    fun update(playInfo: PlayInfo?): PlayUiState
+    fun update(playInfo: PlayInfo?, history: HistoryResource?=null): PlayUiState
     data class Success(
         val movie: MovieDetail,
+        val history: HistoryResource? = null,
         override val playInfo: PlayInfo = PlayInfo.Ideal(),
     ) : PlayUiState {
-        override fun update(playInfo: PlayInfo?) =
-            if (playInfo == null) Failed(error = Error("update play info is null")) else copy(
-                playInfo = playInfo)
+        override fun update(playInfo: PlayInfo?, history: HistoryResource?) =
+            if (playInfo == null) {
+                Failed(error = Error("update play info is null"))
+            } else {
+                copy(
+                    history = this.history?:history,
+                    playInfo = playInfo,
+                )
+            }
     }
 
     data class Failed(val error: Throwable? = null, override val playInfo: PlayInfo? = null) :
         PlayUiState {
-        override fun update(playInfo: PlayInfo?) = copy(playInfo = playInfo)
+        override fun update(playInfo: PlayInfo?, history: HistoryResource?) =
+            copy(playInfo = playInfo)
     }
 
     data class Loading(override val playInfo: PlayInfo? = null) : PlayUiState {
-        override fun update(playInfo: PlayInfo?) =
+        override fun update(playInfo: PlayInfo?, history: HistoryResource?) =
             if (playInfo == null) Failed(error = Error("update play info is null")) else copy(
-                playInfo = playInfo)
+                playInfo = playInfo
+            )
     }
 }
 

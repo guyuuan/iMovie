@@ -1,7 +1,7 @@
 package cn.chitanda.app.imovie.core.data.repository
 
-import cn.chitanda.app.imovie.core.module.HomeData
-import cn.chitanda.app.imovie.core.module.Movie
+import cn.chitanda.app.imovie.core.model.HomeData
+import cn.chitanda.app.imovie.core.model.Movie
 import cn.chitanda.app.imovie.core.network.AppNetworkDataSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine

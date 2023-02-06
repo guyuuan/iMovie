@@ -1,6 +1,6 @@
 package cn.chitanda.app.imovie.feature.recently
 
-import cn.chitanda.app.imovie.core.module.HomeData
+import cn.chitanda.app.imovie.core.model.HomeData
 
 /**
  *@author: Chen

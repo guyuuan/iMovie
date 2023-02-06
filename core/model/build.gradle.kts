@@ -1,6 +1,9 @@
 plugins{
-    id("kotlin")
+    id("imovie.android.lib")
     id("kotlinx-serialization")
+}
+android {
+    namespace = "cn.chitanda.app.imovie.core.model"
 }
 
 dependencies {

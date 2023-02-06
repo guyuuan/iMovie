@@ -1,6 +1,6 @@
 package cn.chitanda.app.imovie.core.network.retrofit
 
-import cn.chitanda.app.imovie.core.module.Movie
+import cn.chitanda.app.imovie.core.model.Movie
 import cn.chitanda.app.imovie.core.network.AppNetworkDataSource
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.coroutines.Dispatchers

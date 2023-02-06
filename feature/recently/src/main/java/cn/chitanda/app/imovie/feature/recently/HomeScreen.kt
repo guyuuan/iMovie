@@ -41,7 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
-import cn.chitanda.app.imovie.core.module.Movie
+import cn.chitanda.app.imovie.core.model.Movie
 import cn.chitanda.app.imovie.ui.navigation.LocalNavigateToPlayScreen
 import cn.chitanda.app.imovie.ui.navigation.NavigationToPlay
 import coil.compose.AsyncImage

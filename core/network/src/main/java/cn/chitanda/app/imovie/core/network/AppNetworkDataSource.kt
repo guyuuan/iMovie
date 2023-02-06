@@ -1,6 +1,6 @@
 package cn.chitanda.app.imovie.core.network
 
-import cn.chitanda.app.imovie.core.module.Movie
+import cn.chitanda.app.imovie.core.model.Movie
 
 /**
  *@author: Chen

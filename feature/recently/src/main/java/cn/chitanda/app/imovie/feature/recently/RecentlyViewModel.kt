@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.chitanda.app.imovie.core.data.repository.MoviesRepository
-import cn.chitanda.app.imovie.core.module.HomeData
+import cn.chitanda.app.imovie.core.model.HomeData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

@@ -7,8 +7,8 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaMetadata.FOLDER_TYPE_NONE
 import androidx.media3.common.MimeTypes
 import cn.chitanda.app.imovie.core.media.MediaItemTree
-import cn.chitanda.app.imovie.core.module.MovieDetail
-import cn.chitanda.app.imovie.core.module.PlaysSet
+import cn.chitanda.app.imovie.core.model.MovieDetail
+import cn.chitanda.app.imovie.core.model.PlaysSet
 import javax.inject.Inject
 
 /**

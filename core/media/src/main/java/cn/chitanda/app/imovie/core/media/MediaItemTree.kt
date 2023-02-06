@@ -1,7 +1,7 @@
 package cn.chitanda.app.imovie.core.media
 
 import androidx.media3.common.MediaItem
-import cn.chitanda.app.imovie.core.module.MovieDetail
+import cn.chitanda.app.imovie.core.model.MovieDetail
 
 /**
  *@author: Chen

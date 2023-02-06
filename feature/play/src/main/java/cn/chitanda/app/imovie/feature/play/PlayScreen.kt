@@ -52,8 +52,8 @@ import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
-import cn.chitanda.app.imovie.core.module.MovieDetail
-import cn.chitanda.app.imovie.core.module.PlaysSet
+import cn.chitanda.app.imovie.core.model.MovieDetail
+import cn.chitanda.app.imovie.core.model.PlaysSet
 import coil.compose.AsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController

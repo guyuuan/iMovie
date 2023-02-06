@@ -10,7 +10,7 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
-    implementation(project(":core:module"))
+    implementation(project(":core:model"))
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
