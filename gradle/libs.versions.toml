@@ -48,6 +48,8 @@ turbine = "0.12.1"
 dynamicBar = "2.5.3"
 exoPlayer = "2.18.2"
 androidxMedia3 = "1.0.0-beta03"
+paging3 = "3.1.1"
+paging3Compose = "1.0.0-alpha17"
 
 [libraries]
 accompanist-flowlayout = { group = "com.google.accompanist", name = "accompanist-flowlayout", version.ref = "accompanist" }
@@ -114,9 +116,13 @@ protobuf-kotlin-lite = { group = "com.google.protobuf", name = "protobuf-kotlin-
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-kotlin-serialization = { group = "com.jakewharton.retrofit", name = "retrofit2-kotlinx-serialization-converter", version.ref = "retrofitKotlinxSerializationJson" }
+room-paging = { group = "androidx.room", name = "room-paging", version.ref = "room" }
 room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+paging3-runtime = {group = "androidx.paging" ,name = "paging-runtime", version.ref = "paging3"}
+paging3-test = {group = "androidx.paging" ,name = "paging-common", version.ref = "paging3"}
+paging3-compose = {group = "androidx.paging" ,name = "paging-compose", version.ref = "paging3Compose"}
 
 # Dependencies of the included build-logic
 android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }

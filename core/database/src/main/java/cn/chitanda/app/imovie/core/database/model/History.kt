@@ -17,7 +17,9 @@ data class History(
     val movieId: Long,
     val movieName: String,
     val duration: Long,
+    val position: Long,
     val moviePic: String,
     val updateTime: Long,
-    val index:Int
+    val index: Int,
+    val indexName:String,
 )

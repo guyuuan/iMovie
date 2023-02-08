@@ -1,5 +1,6 @@
 package cn.chitanda.app.imovie.core.database.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
@@ -20,7 +21,10 @@ interface HistoryDao {
     suspend fun insertHistory(vararg history: History)
 
     @Query("SELECT * FROM PLAY_HISTORY")
-    fun getHistoryFlow(): Flow<List<History>>
+    fun getHistoryPagingSource(): PagingSource<Int,History>
+
+    @Query("SELECT * FROM PLAY_HISTORY WHERE movieName LIKE :query")
+    fun searchHistoryPagingSource(query:String):PagingSource<Int,History>
 
     @Delete
     suspend fun deleteHistory(vararg history: History)

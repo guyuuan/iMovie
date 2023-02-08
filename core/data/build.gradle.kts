@@ -9,7 +9,7 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
-    implementation(project(":core:database"))
+    api(project(":core:database"))
     implementation(project(":core:model"))
     implementation(project(":core:network"))
 
@@ -18,4 +18,5 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.paging3.runtime)
 }

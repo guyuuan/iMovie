@@ -85,7 +85,6 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     LaunchedEffect(key1 = owner) {
         owner?.addCallback(enabled = fullScreen) {
-
             viewModel.setFullScreen(false)
             showSystemBar(systemBarController)
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -225,7 +224,6 @@ fun VideoView(
 }
 
 private fun hideSystemBar(systemBarController: SystemUiController) {
-    Log.d("HideBar", "hideSystemBar: ")
     systemBarController.systemBarsBehavior =
         WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
     systemBarController.isSystemBarsVisible = false
@@ -233,7 +231,6 @@ private fun hideSystemBar(systemBarController: SystemUiController) {
 }
 
 private fun showSystemBar(systemBarController: SystemUiController) {
-    Log.d("HideBar", "showSystemBar: ")
     systemBarController.isSystemBarsVisible = true
 }
 

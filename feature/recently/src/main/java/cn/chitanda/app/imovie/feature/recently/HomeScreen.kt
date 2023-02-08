@@ -24,7 +24,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
@@ -60,77 +59,73 @@ fun RecentlyUpdateScreen(
 ) {
     val homeState by recentlyViewModel.homeState.collectAsState()
     val isLandSpace = LocalWindowSizeClass.current.widthSizeClass > WindowWidthSizeClass.Compact
-    Scaffold {
-        when (homeState) {
-            is RecentlyUiState.Loading -> {
-                Box(
-                    modifier = Modifier
-                        .padding(it)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+    when (homeState) {
+        is RecentlyUiState.Loading -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
+        }
 
-            is RecentlyUiState.LoadingFailed -> {
-                Box(
-                    modifier = Modifier
-                        .padding(it)
-                        .fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = (homeState as RecentlyUiState.LoadingFailed).error.toString(),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
+        is RecentlyUiState.LoadingFailed -> {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = (homeState as RecentlyUiState.LoadingFailed).error.toString(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
+        }
 
-            is RecentlyUiState.Shown -> {
-                val data = (homeState as RecentlyUiState.Shown).data
-                if (isLandSpace) {
-                    LazyRow(
-                        contentPadding = it + PaddingValues(
-                            vertical = 12.dp,
-                            horizontal = 16.dp
-                        ), horizontalArrangement = Arrangement.spacedBy(24.dp)
-                    ) {
-                        items(3, contentType = {
-                            "card"
-                        }) { i ->
-                            MoviesCard(
-                                modifier = Modifier.width(600.dp),
-                                isLandSpace = true,
-                                data = data[i],
-                                type = i + 1,
-                                onItemClick = navigationToPlay
-                            )
-                        }
-                    }
-                } else {
-                    LazyColumn(
-                        contentPadding = it + PaddingValues(
-                            vertical = 12.dp,
-                            horizontal = 16.dp
-                        ), verticalArrangement = Arrangement.spacedBy(24.dp)
-                    ) {
-                        items(3, contentType = {
-                            "card"
-                        }) { i ->
-                            MoviesCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                data = data[i],
-                                isLandSpace = false,
-                                type = i + 1,
-                                onItemClick = navigationToPlay
-                            )
-                        }
+        is RecentlyUiState.Shown -> {
+            val data = (homeState as RecentlyUiState.Shown).data
+            if (isLandSpace) {
+                LazyRow(
+                    contentPadding = PaddingValues(
+                        vertical = 12.dp,
+                        horizontal = 16.dp
+                    ), horizontalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    items(3, contentType = {
+                        "card"
+                    }) { i ->
+                        MoviesCard(
+                            modifier = Modifier.width(600.dp),
+                            isLandSpace = true,
+                            data = data[i],
+                            type = i + 1,
+                            onItemClick = navigationToPlay
+                        )
                     }
                 }
-
+            } else {
+                LazyColumn(
+                    contentPadding = PaddingValues(
+                        vertical = 12.dp,
+                        horizontal = 16.dp
+                    ), verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    items(3, contentType = {
+                        "card"
+                    }) { i ->
+                        MoviesCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            data = data[i],
+                            isLandSpace = false,
+                            type = i + 1,
+                            onItemClick = navigationToPlay
+                        )
+                    }
+                }
             }
+
         }
     }
 }

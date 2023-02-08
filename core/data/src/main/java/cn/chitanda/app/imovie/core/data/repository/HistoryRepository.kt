@@ -1,5 +1,6 @@
 package cn.chitanda.app.imovie.core.data.repository
 
+import androidx.paging.PagingSource
 import cn.chitanda.app.imovie.core.database.dao.HistoryDao
 import cn.chitanda.app.imovie.core.database.model.History
 import cn.chitanda.app.imovie.core.model.HistoryResource
@@ -19,6 +20,8 @@ interface HistoryRepository {
 
     suspend fun findHistoryById(movieId: Long): HistoryResource?
 
+    fun getHistoryPagingSource(): PagingSource<Int, History>
+    fun getSearchHistoryPagingSource(query: String): PagingSource<Int, History>
 }
 
 class HistoryRepositoryImp @Inject constructor(private val dao: HistoryDao) : HistoryRepository {
@@ -37,10 +40,17 @@ class HistoryRepositoryImp @Inject constructor(private val dao: HistoryDao) : Hi
     override suspend fun findHistoryById(movieId: Long): HistoryResource? {
         return dao.findHistoryByMovieId(movieId)?.asHistoryResource()
     }
+
+    override fun getHistoryPagingSource() = dao.getHistoryPagingSource()
+
+
+    override fun getSearchHistoryPagingSource(query: String) =
+        dao.searchHistoryPagingSource("%$query%")
 }
 
 fun HistoryResource.asHistory(): History =
-    History(id, movieId, movieName, duration, moviePic, updateTime, index)
+    History(id, movieId, movieName, duration, position, moviePic, updateTime, index, indexName)
 
-fun History.asHistoryResource(): HistoryResource =
-    HistoryResource(id, movieId, movieName, duration, moviePic, updateTime, index)
+fun History.asHistoryResource(): HistoryResource = HistoryResource(
+    id, movieId, movieName, duration, position, moviePic, updateTime, index, indexName
+)

@@ -96,6 +96,7 @@ class PlayScreenViewModel @Inject constructor(
         controller.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
+                Log.d(TAG, "onIsPlayingChanged: $isPlaying")
                 viewModelScope.launch(Dispatchers.IO) {
                     val history = updateHistory()
                     _playUiState.emit(
@@ -197,18 +198,23 @@ class PlayScreenViewModel @Inject constructor(
             (uiState as? PlayUiState.Success)?.let {
                 movieId = it.movie.id
                 it.history?.copy(
-                    index = controller.currentMediaItemIndex,
-                    duration = controller.currentPosition,
-                    updateTime = System.currentTimeMillis()
-                ).also { h ->
-                    Log.d(TAG, "updateHistory: $h")
-                } ?: (HistoryResource(
                     movieId = it.movie.id,
                     movieName = it.movie.name,
                     moviePic = it.movie.pic,
                     updateTime = System.currentTimeMillis(),
-                    duration = controller.currentPosition,
-                    index = controller.currentMediaItemIndex
+                    duration = controller.contentDuration,
+                    position = controller.currentPosition,
+                    index = controller.currentMediaItemIndex,
+                    indexName = it.movie.playSets[controller.currentMediaItemIndex].name,
+                ) ?: (HistoryResource(
+                    movieId = it.movie.id,
+                    movieName = it.movie.name,
+                    moviePic = it.movie.pic,
+                    updateTime = System.currentTimeMillis(),
+                    duration = controller.contentDuration,
+                    position = controller.currentPosition,
+                    index = controller.currentMediaItemIndex,
+                    indexName = it.movie.playSets[controller.currentMediaItemIndex].name,
                 ).also { update = false })
             }
         }
@@ -230,9 +236,11 @@ class PlayScreenViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        Log.d(TAG, "onCleared: ")
         _controller?.apply {
-            stop()
-            setMediaItems(emptyList())
+//            viewModelScope.launch {  updateHistory()}
+            pause()
+            release()
         }
         super.onCleared()
         appMediaController.removeViewModelListener()

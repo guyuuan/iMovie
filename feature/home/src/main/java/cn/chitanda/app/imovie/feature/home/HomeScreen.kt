@@ -50,7 +50,7 @@ fun HomeScreen() {
 
 
 @Composable
-fun HomeBottomBar(homeScreenState: HomeScreenState) {
+private fun HomeBottomBar(homeScreenState: HomeScreenState) {
     NavigationBar(windowInsets = WindowInsets.navigationBars) {
         homeScreenState.topLevelDestinations.forEachIndexed { index, destination ->
             NavigationBarItem(selected = homeScreenState.currentIndex == index, onClick = {
