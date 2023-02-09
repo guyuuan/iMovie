@@ -1,5 +1,6 @@
 package cn.chitanda.app.imovie.feature.history
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -36,6 +37,7 @@ import cn.chitanda.app.imovie.core.common.R.string as StringRes
  * @createTime: 2023/2/3 14:51
  * @description:
  **/
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
     val history = historyViewModel.data.collectAsLazyPagingItems()
@@ -47,14 +49,14 @@ fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
     ) {
         items(history) {
             it?.let { h ->
-                HistoryItem(history = h, modifier = Modifier.fillMaxWidth())
+                HistoryItem(history = h, modifier = Modifier.fillMaxWidth().animateItemPlacement(), viewModel = historyViewModel)
             }
         }
     }
 }
 
 @Composable
-private fun HistoryItem(history: HistoryResource, modifier: Modifier = Modifier) {
+private fun HistoryItem(history: HistoryResource, modifier: Modifier = Modifier,viewModel: HistoryViewModel) {
     Surface(
         modifier, tonalElevation = 4.dp, shape = MaterialTheme.shapes.medium
     ) {

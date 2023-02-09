@@ -190,6 +190,13 @@ class PlayScreenViewModel @Inject constructor(
         controller.play()
     }
 
+    fun playFromHistory(history: HistoryResource) {
+        val controller = _controller ?: return
+        controller.seekTo(history.index, history.position)
+        controller.prepare()
+        controller.play()
+    }
+
     suspend fun updateHistory(): HistoryResource? = withContext(Dispatchers.IO) {
         val controller = _controller ?: return@withContext null
         var update = true
