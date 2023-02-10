@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLifecycleComposeApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package cn.chitanda.app.imovie.feature.recently
 
@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.model.Movie
 import cn.chitanda.app.imovie.ui.navigation.LocalNavigateToPlayScreen

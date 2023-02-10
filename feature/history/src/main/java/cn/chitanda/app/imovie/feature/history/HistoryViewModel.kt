@@ -8,8 +8,14 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import cn.chitanda.app.imovie.core.data.repository.HistoryRepository
 import cn.chitanda.app.imovie.core.data.repository.asHistoryResource
+import cn.chitanda.app.imovie.core.model.HistoryResource
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -27,8 +33,13 @@ class HistoryViewModel @Inject constructor(
     )
 
     val data = pager.flow.map { it.map { h -> h.asHistoryResource() } }.cachedIn(viewModelScope)
+    private val _uiState: MutableStateFlow<HistoryUiState> by lazy(mode = LazyThreadSafetyMode.NONE) {
+        MutableStateFlow(HistoryUiState(data))
+    }
 
-    var searchQuery: String = ""
+    private val uiState: StateFlow<HistoryUiState> get() = _uiState
+
+    private var searchQuery: String = ""
     private fun pagingSourceFactory() =
         if (searchQuery.isNotEmpty() && searchQuery.isNotBlank()) {
             historyRepository.getSearchHistoryPagingSource(
@@ -37,4 +48,13 @@ class HistoryViewModel @Inject constructor(
         } else {
             historyRepository.getHistoryPagingSource()
         }
+
+    fun deleteHistory(history: HistoryResource) {
+        viewModelScope.launch(Dispatchers.IO) {
+            historyRepository.deleteHistory(history)
+            withContext(Dispatchers.Main) {
+                _uiState.emit(_uiState.value.copy(revoke = history))
+            }
+        }
+    }
 }

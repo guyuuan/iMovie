@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalLifecycleComposeApi::class)
-
 package cn.chitanda.app.imovie.feature.play
 
 import android.annotation.SuppressLint
@@ -9,7 +7,6 @@ import android.util.Log
 import android.widget.FrameLayout
 import androidx.activity.addCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.ExperimentalLifecycleComposeApi
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
@@ -133,6 +129,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
 //                        }
 //                    }
             }
+
             else -> {
                 Column(
                     modifier = Modifier.fillMaxSize(),
@@ -147,35 +144,35 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                         playInfo = playInfo,
                         fullscreen = false
                     )
-                    AnimatedVisibility(visible = !fullScreen) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1f)
-                        ) {
-                            when (uiState) {
-                                is PlayUiState.Success -> {
-                                    MovieDetailBody(
-                                        modifier = Modifier
-                                            .padding(horizontal = 16.dp)
-                                            .fillMaxSize(), playInfo = playInfo, onPlaysSetClick = {
-                                            viewModel.play(it)
-                                        }, movie = (uiState as PlayUiState.Success).movie
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        when (uiState) {
+                            is PlayUiState.Success -> {
+                                MovieDetailBody(
+                                    modifier = Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .fillMaxSize(), playInfo = playInfo, onPlaysSetClick = {
+                                        viewModel.play(it)
+                                    }, movie = (uiState as PlayUiState.Success).movie
+                                )
+                            }
+
+                            is PlayUiState.Failed -> {
+                                Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
+                                    Text(
+                                        text = (uiState as PlayUiState.Failed).error.toString(),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.error
                                     )
                                 }
-                                is PlayUiState.Failed -> {
-                                    Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-                                        Text(
-                                            text = (uiState as PlayUiState.Failed).error.toString(),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                }
-                                is PlayUiState.Loading -> {
-                                    Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-                                        CircularProgressIndicator()
-                                    }
+                            }
+
+                            is PlayUiState.Loading -> {
+                                Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
+                                    CircularProgressIndicator()
                                 }
                             }
                         }
