@@ -24,7 +24,9 @@ interface HistoryRepository {
     fun getSearchHistoryPagingSource(query: String): PagingSource<Int, History>
 }
 
-class HistoryRepositoryImp @Inject constructor(private val dao: HistoryDao) : HistoryRepository {
+class HistoryRepositoryImp @Inject constructor(
+    private val dao: HistoryDao,
+) : HistoryRepository {
     override suspend fun insertHistory(vararg histories: HistoryResource) {
         dao.insertHistory(* (histories.map { it.asHistory() }.toTypedArray()))
     }

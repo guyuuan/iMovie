@@ -15,25 +15,26 @@ import cn.chitanda.app.imovie.feature.play.PlayScreen
  **/
 
 internal const val playIdArgs = "playId"
+internal const val playFromHistoryArgs = "play_from_history"
 internal const val playScreenRoute = "play_screen_route"
 
-internal class PlayArgs(val playId: Long) {
+internal class PlayArgs(val playId: Long, val playFromHistory: Boolean) {
     constructor(savedStateHandle: SavedStateHandle) : this(
-        playId = checkNotNull(savedStateHandle[playIdArgs])
+        playId = checkNotNull(savedStateHandle[playIdArgs]),
+        playFromHistory = checkNotNull(savedStateHandle[playFromHistoryArgs])
     )
 }
 
-fun NavController.navigateToPlay(playId: Long) {
-    this.navigate("$playScreenRoute/$playId")
+fun NavController.navigateToPlay(playId: Long, playFromHistory: Boolean) {
+    this.navigate("$playScreenRoute/$playId/$playFromHistory")
 }
 
 fun NavGraphBuilder.playScreen() {
-    1.0f .. 1.4f
-    1 until  2
     composable(
-        route = "$playScreenRoute/{$playIdArgs}",
+        route = "$playScreenRoute/{$playIdArgs}/{$playFromHistoryArgs}",
         arguments = listOf(
-            navArgument(playIdArgs) { type = NavType.LongType }
+            navArgument(playIdArgs) { type = NavType.LongType },
+            navArgument(playFromHistoryArgs) { type = NavType.BoolType }
         )
     ) {
         PlayScreen()

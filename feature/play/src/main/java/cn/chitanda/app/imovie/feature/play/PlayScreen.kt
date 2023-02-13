@@ -34,6 +34,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,9 +51,11 @@ import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.model.MovieDetail
 import cn.chitanda.app.imovie.core.model.PlaysSet
+import cn.chitanda.app.imovie.ui.navigation.LocalNavController
 import coil.compose.AsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import kotlinx.coroutines.launch
 
 /**
  *@author: Chen
@@ -67,6 +70,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val sizeClass = LocalWindowSizeClass.current.widthSizeClass
     val fullScreen = playInfo?.fullScreen ?: false
     val systemBarController = rememberSystemUiController()
+    val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(key1 = fullScreen) {
         Log.d("HideBar", "fullscreen :$fullScreen ")
         Log.d("HideBar", "play info :$playInfo ")
@@ -76,14 +80,22 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
             showSystemBar(systemBarController)
         }
     }
-    val activity = LocalContext.current as Activity
 
+    val activity = LocalContext.current as Activity
+    val navController = LocalNavController.current
     val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     LaunchedEffect(key1 = owner) {
-        owner?.addCallback(enabled = fullScreen) {
-            viewModel.setFullScreen(false)
-            showSystemBar(systemBarController)
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        owner?.addCallback(enabled = true) {
+            if (fullScreen) {
+                viewModel.setFullScreen(false)
+                showSystemBar(systemBarController)
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            } else {
+                coroutineScope.launch {
+                    viewModel.updateHistory()
+                    navController.popBackStack()
+                }
+            }
         }
     }
     Surface {

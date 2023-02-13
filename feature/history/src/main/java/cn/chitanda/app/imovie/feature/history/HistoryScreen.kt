@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,11 +35,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,6 +57,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import cn.chitanda.app.imovie.core.model.HistoryResource
 import cn.chitanda.app.imovie.ui.ext.plus
+import cn.chitanda.app.imovie.ui.navigation.LocalNavigateToPlayScreen
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -129,6 +127,7 @@ private fun HistoryItem(
     modifier: Modifier = Modifier,
     onDeleted: (HistoryResource) -> Unit,
 ) {
+    val navigationToPlay = LocalNavigateToPlayScreen.current
     val dismissState = rememberDismissState(confirmStateChange = {
         if (it == DismissValue.DismissedToStart) {
             onDeleted(history)
@@ -204,29 +203,13 @@ private fun HistoryItem(
                         )
                     }
                 }
-                TextButton(modifier = Modifier, onClick = {}){
+                TextButton(modifier = Modifier, onClick = {
+                    navigationToPlay(history.movieId, true)
+                }) {
                     Text(text = stringResource(id = StringRes.continue_playing))
                 }
             }
         }
     }
 
-}
-
-@Composable
-private fun HistoryScreenSnackBar(state: SnackbarHostState) {
-    SnackbarHost(state) { data ->
-        (data.visuals as? RevokeDeleteSnackVisuals)?.let { _ ->
-        }
-    }
-}
-
-private class RevokeDeleteSnackVisuals(
-    val data: HistoryResource,
-    messageHeader: String,
-    override val actionLabel: String
-) : SnackbarVisuals {
-    override val duration = SnackbarDuration.Short
-    override val message = messageHeader.format(data.movieName)
-    override val withDismissAction = true
 }

@@ -75,7 +75,7 @@ class PlayScreenViewModel @Inject constructor(
     private val uiState get() = _playUiState.value
     private fun setController(movieId: String?) {
         val controller = _controller ?: return
-        controller.playWhenReady = false
+        controller.playWhenReady = playArgs.playFromHistory
         viewModelScope.launch {
             _playUiState.emit(
                 uiState.update(
@@ -181,6 +181,12 @@ class PlayScreenViewModel @Inject constructor(
         future?.addListener({
             val mediaList = future.get().value?.toList() ?: emptyList()
             controller.setMediaItems(mediaList, false)
+            if (playArgs.playFromHistory) {
+                val uiState = uiState
+                if (uiState is PlayUiState.Success && uiState.history != null) {
+                    controller.seekTo(uiState.history.index, uiState.history.position)
+                }
+            }
             controller.prepare()
         }, MoreExecutors.directExecutor())
     }
@@ -247,7 +253,6 @@ class PlayScreenViewModel @Inject constructor(
     override fun onCleared() {
         Log.d(TAG, "onCleared: ")
         _controller?.apply {
-//            viewModelScope.launch {  updateHistory()}
             stop()
             setMediaItems(emptyList())
         }

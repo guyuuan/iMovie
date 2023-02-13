@@ -8,9 +8,9 @@ import androidx.navigation.NavController
  * @createTime: 2023/2/3 10:08
  * @description:
  **/
-typealias NavigationToPlay = (Long) -> Unit
+typealias NavigationToPlay = (Long, Boolean) -> Unit
 
-val LocalNavController = compositionLocalOf <NavController>{
+val LocalNavController = compositionLocalOf<NavController> {
     error("Could not find LocalNavController")
 }
 

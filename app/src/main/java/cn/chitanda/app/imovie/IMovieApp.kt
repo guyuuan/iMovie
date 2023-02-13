@@ -9,5 +9,4 @@ import dagger.hilt.android.HiltAndroidApp
  *@description:
  **/
 @HiltAndroidApp
-class IMovieApp:Application() {
-}
+class IMovieApp : Application()

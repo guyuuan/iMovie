@@ -2,6 +2,7 @@ package cn.chitanda.app.imovie.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidedValue
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -15,21 +16,16 @@ import androidx.navigation.compose.rememberNavController
 @Composable
 fun AppRouter(
     navController: NavHostController = rememberNavController(),
+    vararg navigationRegisters: ProvidedValue<*>,
     startDestination: String,
-    builder: NavGraphBuilder.() -> Unit
+    builder: NavGraphBuilder.() -> Unit,
 ) {
     CompositionLocalProvider(
         LocalNavController provides navController,
+        *navigationRegisters
     ) {
         NavHost(
             navController = navController, startDestination = startDestination, builder = builder
         )
     }
-}
-
-@Composable
-fun NavigationRegistry(
-    navigationToPlay: NavigationToPlay, content: @Composable () -> Unit
-) {
-    CompositionLocalProvider(LocalNavigateToPlayScreen provides navigationToPlay, content = content)
 }

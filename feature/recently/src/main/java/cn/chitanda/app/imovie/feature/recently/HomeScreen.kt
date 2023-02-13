@@ -155,8 +155,8 @@ private fun MoviesCard(
     Surface(modifier = modifier, shape = MaterialTheme.shapes.medium, tonalElevation = 8.dp) {
         Column(
             modifier = Modifier
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(8.dp),
+//            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(text = typeString, style = MaterialTheme.typography.displaySmall)
             repeat(2) {
@@ -166,7 +166,7 @@ private fun MoviesCard(
                     modifier = Modifier
                         .fillMaxWidth()
                             then if (isLandSpace) Modifier.weight(1f) else Modifier,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     for (movie in list) {
                         MovieItem(
@@ -174,7 +174,8 @@ private fun MoviesCard(
                             isLandSpace = isLandSpace,
                             modifier = Modifier
                                 .weight(1f)
-                                .fillMaxHeight(),
+                                .fillMaxHeight()
+                                .padding(8.dp),
                             onClick = onItemClick
                         )
                     }
@@ -193,9 +194,11 @@ fun MovieItem(
 ) {
     if (isLandSpace) {
         Row(
-            modifier = modifier.clickable {
-                onClick(movie.id)
-            },
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.small)
+                .clickable {
+                    onClick(movie.id, false)
+                } then modifier,
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -220,9 +223,11 @@ fun MovieItem(
         }
     } else {
         Column(
-            modifier = modifier.clickable {
-                onClick(movie.id)
-            },
+            modifier = Modifier
+                .clip(MaterialTheme.shapes.small)
+                .clickable {
+                    onClick(movie.id, false)
+                } then modifier,
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {

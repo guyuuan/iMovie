@@ -15,7 +15,7 @@ import cn.chitanda.app.imovie.feature.play.navigation.navigateToPlay
 import cn.chitanda.app.imovie.feature.play.navigation.playScreen
 import cn.chitanda.app.imovie.media.AppMediaControllerImpl
 import cn.chitanda.app.imovie.ui.navigation.AppRouter
-import cn.chitanda.app.imovie.ui.navigation.NavigationRegistry
+import cn.chitanda.app.imovie.ui.navigation.LocalNavigateToPlayScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -31,13 +31,15 @@ class MainActivity : AppCompatActivity() {
         setContent {
             IMovieTheme(calculateWindowSizeClass(activity = this)) {
                 val navController = rememberNavController()
-                NavigationRegistry(navigationToPlay = { navController.navigateToPlay(it) }) {
-                    AppRouter(
-                        navController = navController, startDestination = homeNavigationRoute
-                    ) {
-                        homeScreen()
-                        playScreen()
-                    }
+                AppRouter(
+                    navController = navController,
+                    LocalNavigateToPlayScreen provides { id, bool ->
+                        navController.navigateToPlay(id, bool)
+                    },
+                    startDestination = homeNavigationRoute
+                ) {
+                    homeScreen()
+                    playScreen()
                 }
             }
         }
