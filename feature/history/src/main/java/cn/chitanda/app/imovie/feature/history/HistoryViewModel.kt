@@ -14,7 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -49,12 +48,15 @@ class HistoryViewModel @Inject constructor(
             historyRepository.getHistoryPagingSource()
         }
 
-    fun deleteHistory(history: HistoryResource) {
-        viewModelScope.launch(Dispatchers.IO) {
-            historyRepository.deleteHistory(history)
-            withContext(Dispatchers.Main) {
-                _uiState.emit(_uiState.value.copy(revoke = history))
-            }
+    suspend fun deleteHistory(history: HistoryResource) = withContext(Dispatchers.IO) {
+        historyRepository.deleteHistory(history)
+        withContext(Dispatchers.Main) {
+            _uiState.emit(_uiState.value)
         }
     }
+
+    suspend fun revokeDeleteHistory(history: HistoryResource) = withContext(Dispatchers.IO) {
+        historyRepository.insertHistory(history)
+    }
+
 }

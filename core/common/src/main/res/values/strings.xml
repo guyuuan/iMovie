@@ -4,4 +4,7 @@
     <string name="history_screen_label">历史记录</string>
     <string name="search_screen_label">搜索</string>
     <string name="last_seen">上次观看到:</string>
+    <string name="you_have_deleted_history">你删除了《%s》的历史记录</string>
+    <string name="revoke">撤销</string>
+    <string name="continue_playing">继续播放</string>
 </resources>

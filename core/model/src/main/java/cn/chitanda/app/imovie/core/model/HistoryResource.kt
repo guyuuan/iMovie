@@ -8,7 +8,6 @@ import kotlinx.datetime.LocalTime
  * @description:
  **/
 data class HistoryResource(
-    val id: Long = 0,
     val movieId: Long,
     val movieName: String,
     val duration: Long,

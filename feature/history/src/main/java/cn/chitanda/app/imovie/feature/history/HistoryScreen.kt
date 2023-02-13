@@ -1,4 +1,8 @@
-@file:OptIn(ExperimentalMaterialApi::class,ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(
+    ExperimentalMaterialApi::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class
+)
 
 package cn.chitanda.app.imovie.feature.history
 
@@ -32,10 +36,18 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,36 +59,62 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import cn.chitanda.app.imovie.core.model.HistoryResource
+import cn.chitanda.app.imovie.ui.ext.plus
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import cn.chitanda.app.imovie.core.common.R.string as StringRes
-import cn.chitanda.app.imovie.ui.ext.plus
 
 /**
  * @author: Chen
  * @createTime: 2023/2/3 14:51
  * @description:
  **/
+
 @Composable
 fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
     val history = historyViewModel.data.collectAsLazyPagingItems()
+    val snackbarState = remember {
+        SnackbarHostState()
+    }
+    val snackbarMessage = stringResource(id = StringRes.you_have_deleted_history)
+    val snackbarAction = stringResource(id = StringRes.revoke)
+    val snackBarScope = rememberCoroutineScope()
     Scaffold(snackbarHost = {
-
+        SnackbarHost(snackbarState)
     }) {
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = it+PaddingValues(vertical = 16.dp, horizontal = 12.dp)
+            contentPadding = it + PaddingValues(vertical = 16.dp, horizontal = 12.dp)
         ) {
-            items(history) {hr->
+            items(key = { item ->
+                item.movieId
+            }, items = history) { hr ->
                 hr?.let { h ->
                     HistoryItem(
                         history = h,
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateItemPlacement(),
-                        viewModel = historyViewModel
+                        onDeleted = { deleted ->
+                            snackBarScope.launch {
+                                historyViewModel.deleteHistory(deleted)
+                                val result = snackbarState.showSnackbar(
+                                    message = snackbarMessage.format(deleted.movieName),
+                                    actionLabel = snackbarAction,
+                                    withDismissAction = true
+                                )
+                                when (result) {
+                                    SnackbarResult.ActionPerformed -> {
+                                        historyViewModel.revokeDeleteHistory(deleted)
+                                    }
+
+                                    SnackbarResult.Dismissed -> {}
+                                }
+                            }
+                        }
                     )
                 }
             }
@@ -84,15 +122,18 @@ fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
     }
 }
 
+
 @Composable
 private fun HistoryItem(
-    history: HistoryResource, modifier: Modifier = Modifier, viewModel: HistoryViewModel
+    history: HistoryResource,
+    modifier: Modifier = Modifier,
+    onDeleted: (HistoryResource) -> Unit,
 ) {
     val dismissState = rememberDismissState(confirmStateChange = {
-        if(it == DismissValue.DismissedToStart) {
-            viewModel.deleteHistory(history)
+        if (it == DismissValue.DismissedToStart) {
+            onDeleted(history)
         }
-        it !=DismissValue.DismissedToStart
+        it != DismissValue.DismissedToStart
     })
 
     SwipeToDismiss(state = dismissState,
@@ -129,7 +170,8 @@ private fun HistoryItem(
                     .padding(12.dp)
                     .fillMaxWidth()
                     .height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 AsyncImage(
                     model = history.moviePic,
@@ -162,9 +204,29 @@ private fun HistoryItem(
                         )
                     }
                 }
-                Spacer(modifier = Modifier.weight(1.5f))
+                TextButton(modifier = Modifier, onClick = {}){
+                    Text(text = stringResource(id = StringRes.continue_playing))
+                }
             }
         }
     }
 
+}
+
+@Composable
+private fun HistoryScreenSnackBar(state: SnackbarHostState) {
+    SnackbarHost(state) { data ->
+        (data.visuals as? RevokeDeleteSnackVisuals)?.let { _ ->
+        }
+    }
+}
+
+private class RevokeDeleteSnackVisuals(
+    val data: HistoryResource,
+    messageHeader: String,
+    override val actionLabel: String
+) : SnackbarVisuals {
+    override val duration = SnackbarDuration.Short
+    override val message = messageHeader.format(data.movieName)
+    override val withDismissAction = true
 }

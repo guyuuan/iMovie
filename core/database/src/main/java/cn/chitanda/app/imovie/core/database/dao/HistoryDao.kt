@@ -20,7 +20,7 @@ interface HistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHistory(vararg history: History)
 
-    @Query("SELECT * FROM PLAY_HISTORY")
+    @Query("SELECT * FROM PLAY_HISTORY ORDER BY updateTime DESC")
     fun getHistoryPagingSource(): PagingSource<Int,History>
 
     @Query("SELECT * FROM PLAY_HISTORY WHERE movieName LIKE :query")
@@ -32,6 +32,6 @@ interface HistoryDao {
     @Update
     suspend fun updateHistory(vararg history: History)
 
-    @Query("SELECT * FROM PLAY_HISTORY WHERE movieId == :movieId")
+    @Query("SELECT * FROM PLAY_HISTORY WHERE movieId == :movieId ORDER BY updateTime DESC")
     suspend fun findHistoryByMovieId(movieId:Long):History?
 }

@@ -11,5 +11,4 @@ import kotlinx.coroutines.flow.Flow
  **/
 data class HistoryUiState(
     val data: Flow<PagingData<HistoryResource>>,
-    val revoke: HistoryResource? = null
 )

@@ -49,8 +49,8 @@ class HistoryRepositoryImp @Inject constructor(private val dao: HistoryDao) : Hi
 }
 
 fun HistoryResource.asHistory(): History =
-    History(id, movieId, movieName, duration, position, moviePic, updateTime, index, indexName)
+    History(movieId, movieName, duration, position, moviePic, updateTime, index, indexName)
 
 fun History.asHistoryResource(): HistoryResource = HistoryResource(
-    id, movieId, movieName, duration, position, moviePic, updateTime, index, indexName
+    movieId, movieName, duration, position, moviePic, updateTime, index, indexName
 )

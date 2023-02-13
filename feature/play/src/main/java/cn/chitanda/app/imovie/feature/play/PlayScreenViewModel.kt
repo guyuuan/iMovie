@@ -50,11 +50,13 @@ class PlayScreenViewModel @Inject constructor(
     init {
         Log.w(TAG, "$TAG: init")
         appMediaController.viewModelInitialize { setController(null) }
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             moviesRepository.getMovieDetail(playArgs.playId).map<Movie, PlayUiState> {
-                val movie = it.asMovieDetail()
-                mediaItemTree.initialize(movie)
-                PlayUiState.Success(movie, historyRepository.findHistoryById(movie.id))
+                withContext(Dispatchers.IO) {
+                    val movie = it.asMovieDetail()
+                    mediaItemTree.initialize(movie)
+                    PlayUiState.Success(movie, historyRepository.findHistoryById(movie.id))
+                }
             }.catch {
                 it.printStackTrace()
                 _playUiState.emit(PlayUiState.Failed(it))
@@ -97,7 +99,7 @@ class PlayScreenViewModel @Inject constructor(
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
                 Log.d(TAG, "onIsPlayingChanged: $isPlaying")
-                viewModelScope.launch(Dispatchers.IO) {
+                viewModelScope.launch {
                     val history = updateHistory()
                     _playUiState.emit(
                         uiState.update(
@@ -246,8 +248,8 @@ class PlayScreenViewModel @Inject constructor(
         Log.d(TAG, "onCleared: ")
         _controller?.apply {
 //            viewModelScope.launch {  updateHistory()}
-            pause()
-            release()
+            stop()
+            setMediaItems(emptyList())
         }
         super.onCleared()
         appMediaController.removeViewModelListener()

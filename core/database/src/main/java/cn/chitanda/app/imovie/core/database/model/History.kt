@@ -12,8 +12,7 @@ import androidx.room.PrimaryKey
     tableName = "play_history"
 )
 data class History(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    @PrimaryKey(autoGenerate = false)
     val movieId: Long,
     val movieName: String,
     val duration: Long,
