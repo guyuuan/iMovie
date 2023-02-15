@@ -1,11 +1,20 @@
+@file:OptIn(ExperimentalComposeUiApi::class)
+
 package cn.chitanda.app.imovie
 
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
 import cn.chitanda.app.imovie.core.design.theme.IMovieTheme
@@ -27,11 +36,19 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
         super.onCreate(savedInstanceState)
         setContent {
+            val focusManager = LocalFocusManager.current
             IMovieTheme(calculateWindowSizeClass(activity = this)) {
                 val navController = rememberNavController()
                 AppRouter(
+                    modifier = Modifier.pointerInput(Unit) {
+                        detectTapGestures {
+                            focusManager.clearFocus()
+                        }
+                    },
                     navController = navController,
                     LocalNavigateToPlayScreen provides { id, bool ->
                         navController.navigateToPlay(id, bool)
@@ -43,7 +60,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
     override fun onStart() {

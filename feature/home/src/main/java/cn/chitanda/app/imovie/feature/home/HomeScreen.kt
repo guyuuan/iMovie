@@ -35,7 +35,9 @@ fun HomeScreen() {
         },
         bottomBar = {
             HomeBottomBar(homeScreenState)
-        }) {
+        },
+        contentWindowInsets = WindowInsets(0,0,0,0)
+    ) {
         NavHost(
             modifier = Modifier.padding(it),
             navController = homeNavController,

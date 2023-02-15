@@ -35,6 +35,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -91,8 +92,7 @@ fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
                 item.movieId
             }, items = history) { hr ->
                 hr?.let { h ->
-                    HistoryItem(
-                        history = h,
+                    HistoryItem(history = h,
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateItemPlacement(),
@@ -102,7 +102,8 @@ fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
                                 val result = snackbarState.showSnackbar(
                                     message = snackbarMessage.format(deleted.movieName),
                                     actionLabel = snackbarAction,
-                                    withDismissAction = true
+                                    withDismissAction = true,
+                                    duration = SnackbarDuration.Long
                                 )
                                 when (result) {
                                     SnackbarResult.ActionPerformed -> {
@@ -112,8 +113,7 @@ fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
                                     SnackbarResult.Dismissed -> {}
                                 }
                             }
-                        }
-                    )
+                        })
                 }
             }
         }
@@ -150,13 +150,13 @@ private fun HistoryItem(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 5.dp), contentAlignment = Alignment.CenterEnd
+                    .padding(horizontal = 5.dp),
+                contentAlignment = Alignment.CenterEnd
             ) {
                 Icon(
                     imageVector = Icons.Default.DeleteSweep,
                     contentDescription = "Delete Icon",
-                    modifier = Modifier
-                        .scale(scale),
+                    modifier = Modifier.scale(scale),
                     tint = color
                 )
             }

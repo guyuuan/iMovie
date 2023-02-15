@@ -95,7 +95,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                 } else {
                     coroutineScope.launch {
                         viewModel.updateHistory()
-                        navController.popBackStack()
+                        navController.navigateUp()
                     }
                 }
             }
