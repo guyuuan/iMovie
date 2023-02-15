@@ -41,7 +41,91 @@ class PlayScreenViewModel @Inject constructor(
     private val appMediaController: AppMediaController,
     private val mediaItemTree: MediaItemTree,
     private val historyRepository: HistoryRepository,
-) : ViewModel() {
+) : ViewModel(), Player.Listener {
+    private var hasPlayed = false
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        super.onIsPlayingChanged(isPlaying)
+        hasPlayed = true
+        val controller = _controller ?: return
+        Log.d(TAG, "onIsPlayingChanged: $isPlaying")
+        viewModelScope.launch {
+            val history = updateHistory()
+            _playUiState.emit(
+                uiState.update(
+                    history = history, playInfo = if (isPlaying) PlayInfo.Playing(
+                        controller, fullScreen = uiState.playInfo?.fullScreen ?: false
+                    ) else PlayInfo.Pausing(
+                        controller, fullScreen = uiState.playInfo?.fullScreen ?: false
+                    )
+                )
+            )
+        }
+    }
+
+    override fun onPlaybackStateChanged(playbackState: Int) {
+        super.onPlaybackStateChanged(playbackState)
+        val controller = _controller ?: return
+        when (playbackState) {
+            Player.STATE_IDLE -> {
+                viewModelScope.launch {
+                    _playUiState.emit(
+                        uiState.update(
+                            playInfo = PlayInfo.Ideal(
+                                controller,
+                                fullScreen = uiState.playInfo?.fullScreen ?: false
+                            )
+                        )
+                    )
+                }
+            }
+
+            Player.STATE_BUFFERING -> {
+                viewModelScope.launch {
+                    _playUiState.emit(
+                        uiState.update(
+                            playInfo = PlayInfo.Buffering(
+                                controller,
+                                fullScreen = uiState.playInfo?.fullScreen ?: false
+                            )
+                        )
+                    )
+                }
+            }
+
+            Player.STATE_READY -> {
+                viewModelScope.launch {
+                    _playUiState.emit(
+                        uiState.update(
+                            playInfo = PlayInfo.Ready(
+                                controller,
+                                fullScreen = uiState.playInfo?.fullScreen ?: false
+                            )
+                        )
+                    )
+                }
+            }
+
+            Player.STATE_ENDED -> {
+                viewModelScope.launch {
+                    _playUiState.emit(
+                        uiState.update(
+                            playInfo = PlayInfo.Ending(
+                                controller,
+                                fullScreen = uiState.playInfo?.fullScreen ?: false
+                            )
+                        )
+                    )
+                }
+            }
+
+        }
+    }
+
+    override fun onPlayerError(error: PlaybackException) {
+        Log.e(TAG, "onPlayerError: $error")
+        super.onPlayerError(error)
+    }
+
     private val playArgs = PlayArgs(savedStateHandle)
 
     private val _controller: MediaBrowser?
@@ -95,88 +179,7 @@ class PlayScreenViewModel @Inject constructor(
                 )
             )
         }
-        controller.addListener(object : Player.Listener {
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                super.onIsPlayingChanged(isPlaying)
-                Log.d(TAG, "onIsPlayingChanged: $isPlaying")
-                viewModelScope.launch {
-                    val history = updateHistory()
-                    _playUiState.emit(
-                        uiState.update(
-                            history = history, playInfo = if (isPlaying) PlayInfo.Playing(
-                                controller, fullScreen = uiState.playInfo?.fullScreen ?: false
-                            ) else PlayInfo.Pausing(
-                                controller, fullScreen = uiState.playInfo?.fullScreen ?: false
-                            )
-                        )
-                    )
-                }
-            }
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                super.onPlaybackStateChanged(playbackState)
-                when (playbackState) {
-                    Player.STATE_IDLE -> {
-                        viewModelScope.launch {
-                            _playUiState.emit(
-                                uiState.update(
-                                    playInfo = PlayInfo.Ideal(
-                                        controller,
-                                        fullScreen = uiState.playInfo?.fullScreen ?: false
-                                    )
-                                )
-                            )
-                        }
-                    }
-
-                    Player.STATE_BUFFERING -> {
-                        viewModelScope.launch {
-                            _playUiState.emit(
-                                uiState.update(
-                                    playInfo = PlayInfo.Buffering(
-                                        controller,
-                                        fullScreen = uiState.playInfo?.fullScreen ?: false
-                                    )
-                                )
-                            )
-                        }
-                    }
-
-                    Player.STATE_READY -> {
-                        viewModelScope.launch {
-                            _playUiState.emit(
-                                uiState.update(
-                                    playInfo = PlayInfo.Ready(
-                                        controller,
-                                        fullScreen = uiState.playInfo?.fullScreen ?: false
-                                    )
-                                )
-                            )
-                        }
-                    }
-
-                    Player.STATE_ENDED -> {
-                        viewModelScope.launch {
-                            _playUiState.emit(
-                                uiState.update(
-                                    playInfo = PlayInfo.Ending(
-                                        controller,
-                                        fullScreen = uiState.playInfo?.fullScreen ?: false
-                                    )
-                                )
-                            )
-                        }
-                    }
-
-                }
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                Log.e(TAG, "onPlayerError: $error")
-                super.onPlayerError(error)
-            }
-
-        })
+        controller.addListener(this)
         val future = movieId?.let { controller.getChildren(it, 0, Int.MAX_VALUE, null) }
         future?.addListener({
             val mediaList = future.get().value?.toList() ?: emptyList()
@@ -206,6 +209,7 @@ class PlayScreenViewModel @Inject constructor(
     }
 
     suspend fun updateHistory(): HistoryResource? = withContext(Dispatchers.IO) {
+        if (!hasPlayed) return@withContext null
         val controller = _controller ?: return@withContext null
         var update = true
         var movieId: Long? = null
@@ -233,6 +237,7 @@ class PlayScreenViewModel @Inject constructor(
                 ).also { update = false })
             }
         }
+        Log.d(TAG, "updateHistory: $history")
         if (history != null) {
             if (update) {
                 historyRepository.updateHistory(history)
@@ -251,10 +256,10 @@ class PlayScreenViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        Log.d(TAG, "onCleared: ")
         _controller?.apply {
             stop()
             setMediaItems(emptyList())
+            removeListener(this@PlayScreenViewModel)
         }
         super.onCleared()
         appMediaController.removeViewModelListener()

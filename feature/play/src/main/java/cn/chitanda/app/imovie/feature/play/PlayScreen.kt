@@ -5,7 +5,7 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.util.Log
 import android.widget.FrameLayout
-import androidx.activity.addCallback
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -31,6 +31,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -84,20 +85,35 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val activity = LocalContext.current as Activity
     val navController = LocalNavController.current
     val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    LaunchedEffect(key1 = owner) {
-        owner?.addCallback(enabled = true) {
-            if (fullScreen) {
-                viewModel.setFullScreen(false)
-                showSystemBar(systemBarController)
-                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            } else {
-                coroutineScope.launch {
-                    viewModel.updateHistory()
-                    navController.popBackStack()
+    DisposableEffect(key1 = owner ){
+        val callback =object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (fullScreen) {
+                    viewModel.setFullScreen(false)
+                    showSystemBar(systemBarController)
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                } else {
+                    coroutineScope.launch {
+                        viewModel.updateHistory()
+                        navController.popBackStack()
+                    }
                 }
             }
         }
+        owner?.addCallback(callback)
+        onDispose {
+            callback.isEnabled = false
+        }
     }
+//    LaunchedEffect(key1 = owner) {
+//        owner?.addCallback(enabled = fullScreen) {
+//            if (fullScreen) {
+//                viewModel.setFullScreen(false)
+//                showSystemBar(systemBarController)
+//                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+//            }
+//        }
+//    }
     Surface {
         when {
             sizeClass > WindowWidthSizeClass.Compact || fullScreen -> {
