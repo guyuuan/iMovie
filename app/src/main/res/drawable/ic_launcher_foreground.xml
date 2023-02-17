@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="10240"
+    android:viewportHeight="10240">
+    <group
+        android:scaleX="5"
+        android:scaleY="5"
+        android:translateX="2560"
+        android:translateY="2560"
+        >
+        <path
+            android:fillColor="@color/ic_launcher_foreground"
+            android:pathData="M768,170l170,0 0,598q0,34 -25,60t-59,26l-684,0q-34,0 -59,-26t-25,-60l0,-512q0,-34 25,-60t59,-26l44,0 84,172 128,0 -84,-172 84,0 86,172 128,0 -86,-172 86,0 86,172 128,0z" />
+
+    </group>
+</vector>
