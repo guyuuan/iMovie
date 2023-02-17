@@ -2,6 +2,7 @@ plugins {
     id("imovie.android.app")
     id("imovie.android.app.compose")
     id("imovie.android.hilt")
+    id("kotlinx-serialization")
 }
 
 android {
@@ -10,17 +11,24 @@ android {
     defaultConfig {
         applicationId = "cn.chitanda.app.imovie"
         versionCode = 1
-        versionName = "1.0"
+        versionName = "0.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
     }
 
+    buildTypes {
+        val release by getting {
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("chitanda")
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"),"proguard-rules.pro")
+        }
+    }
 
 }
 
 dependencies {
-    
+
     implementation(project(":core:design"))
     implementation(project(":core:ui"))
     implementation(project(":core:media"))

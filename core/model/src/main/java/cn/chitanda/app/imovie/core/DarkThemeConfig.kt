@@ -1,4 +1,4 @@
-package cn.chitanda.app.imovie.core.model
+package cn.chitanda.app.imovie.core
 
 /**
  *@author: Chen
