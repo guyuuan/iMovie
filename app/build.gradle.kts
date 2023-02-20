@@ -13,7 +13,6 @@ android {
     defaultConfig {
         applicationId = "cn.chitanda.app.imovie"
         versionCode = 1
-        versionName = "0.0.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

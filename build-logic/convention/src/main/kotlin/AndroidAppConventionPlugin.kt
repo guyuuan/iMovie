@@ -25,7 +25,7 @@ class AndroidAppConventionPlugin : Plugin<Project> {
                 configureKotlinAndroid(this)
                 defaultConfig.targetSdk = 33
                 defaultConfig.versionName = try {
-                    System.getenv("APP_VERSION_NAME")
+                    System.getenv("APP_VERSION_NAME").replaceFirst("v","")
                 } catch (_: Throwable) {
                     "0.0.1"
                 }
