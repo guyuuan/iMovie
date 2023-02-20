@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 plugins {
     id("imovie.android.app")
     id("imovie.android.app.compose")
@@ -20,8 +22,14 @@ android {
     buildTypes {
         val release by getting {
             isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("chitanda")
-            proguardFiles(getDefaultProguardFile("proguard-android.txt"),"proguard-rules.pro")
+            try {
+                signingConfigs.getByName("chitanda")
+            } catch (_: Throwable) {
+                null
+            }?.let {
+                signingConfig = it
+            }
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
     }
 

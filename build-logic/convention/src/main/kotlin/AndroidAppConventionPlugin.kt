@@ -30,9 +30,9 @@ class AndroidAppConventionPlugin : Plugin<Project> {
                     "0.0.1"
                 }
 //                configureFlavors(this)
-                signingConfigs.create("chitanda") {
-                    val propertiesFile = file("${project.rootProject.projectDir}/local.properties")
-                    if (propertiesFile.exists()) {
+                val propertiesFile = file("${project.rootProject.projectDir}/local.properties")
+                if (propertiesFile.exists()) {
+                    signingConfigs.create("chitanda") {
                         val properties = Properties().apply {
                             load(propertiesFile.inputStream())
                         }
