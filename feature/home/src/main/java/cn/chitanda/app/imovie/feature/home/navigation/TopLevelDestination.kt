@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraphBuilder
 import cn.chitanda.app.imovie.feature.history.navigation.historyNavigationRoute
@@ -13,6 +14,8 @@ import cn.chitanda.app.imovie.feature.recently.navigation.recentlyUpdateNavigati
 import cn.chitanda.app.imovie.feature.recently.navigation.recentlyUpdateScreen
 import cn.chitanda.app.imovie.feature.search.navigation.searchNavigationRoute
 import cn.chitanda.app.imovie.feature.search.navigation.searchScreen
+import cn.chitanda.app.imovie.feature.setting.navigation.settingNavigationRoute
+import cn.chitanda.app.imovie.feature.setting.navigation.settingScreen
 import cn.chitanda.app.imovie.core.common.R.string as CommonString
 
 /**
@@ -51,6 +54,14 @@ enum class TopLevelDestination(
         route = historyNavigationRoute,
         navRegistry = {
             it.historyScreen()
+        },
+    ) ,
+    Setting(
+        icon = Icons.Default.Settings,
+        label = CommonString.search_screen_label,
+        route = settingNavigationRoute,
+        navRegistry = {
+            it.settingScreen()
         },
     )
 }

@@ -15,4 +15,5 @@ dependencies {
     api(project(":feature:recently"))
     api(project(":feature:search"))
     api(project(":feature:history"))
+    api(project(":feature:setting"))
 }

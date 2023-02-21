@@ -34,6 +34,7 @@ class HomeScreenState(
             TopLevelDestination.RecentlyUpdate.route -> TopLevelDestination.RecentlyUpdate
             TopLevelDestination.History.route -> TopLevelDestination.History
             TopLevelDestination.Search.route -> TopLevelDestination.Search
+            TopLevelDestination.Setting.route -> TopLevelDestination.Setting
             else -> null
         }
     val topLevelDestinations: List<TopLevelDestination> = TopLevelDestination.values().asList()

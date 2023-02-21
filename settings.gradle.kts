@@ -1,5 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
+
+
 pluginManagement {
     includeBuild("build-logic")
     repositories {
@@ -30,3 +32,4 @@ include( ":feature:play")
 include(":feature:search")
 include(":feature:history")
 include(":feature:recently")
+include(":feature:setting")
