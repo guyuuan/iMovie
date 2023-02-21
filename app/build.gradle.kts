@@ -19,6 +19,10 @@ android {
     }
 
     buildTypes {
+        val debug by getting {
+            signingConfig = signingConfigs.getByName("chitanda")
+            proguardFiles(getDefaultProguardFile("proguard-android.txt"),"proguard-rules.pro")
+        }
         val release by getting {
             isMinifyEnabled = true
             try {

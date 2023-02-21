@@ -1,6 +1,7 @@
 package cn.chitanda.app.imovie
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
@@ -34,6 +35,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.addFlags(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS)
+        }
         super.onCreate(savedInstanceState)
         setContent {
             val focusManager = LocalFocusManager.current
@@ -56,6 +60,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
     override fun onStart() {

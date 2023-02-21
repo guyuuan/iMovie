@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -42,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -85,8 +87,8 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val activity = LocalContext.current as Activity
     val navController = LocalNavController.current
     val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
-    DisposableEffect(key1 = owner ){
-        val callback =object : OnBackPressedCallback(true) {
+    DisposableEffect(key1 = owner) {
+        val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (fullScreen) {
                     viewModel.setFullScreen(false)
@@ -105,57 +107,43 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
             callback.isEnabled = false
         }
     }
-//    LaunchedEffect(key1 = owner) {
-//        owner?.addCallback(enabled = fullScreen) {
-//            if (fullScreen) {
-//                viewModel.setFullScreen(false)
-//                showSystemBar(systemBarController)
-//                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-//            }
-//        }
-//    }
+
     Surface {
         when {
-            sizeClass > WindowWidthSizeClass.Compact || fullScreen -> {
+            fullScreen -> {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     VideoView(
                         modifier = Modifier.fillMaxSize(),
                         viewModel = viewModel,
                         playInfo = playInfo,
-                        fullscreen = fullScreen
+                        fullscreen = true
                     )
                 }
-//                    AnimatedVisibility(visible = !fullScreen) {
-//                        Surface(modifier = Modifier
-//                            .fillMaxHeight()
-//                            .weight(1f)) {
-//                            when (uiState) {
-//                                is PlayUiState.Success -> {
-//                                    MovieDetailBody(modifier = Modifier
-//                                        .windowInsetsPadding(WindowInsets.statusBars)
-//                                        .padding(16.dp)
-//                                        .fillMaxSize(),
-//                                        playInfo = playInfo,
-//                                        onPlaysSetClick = {
-//                                            viewModel.play(it)
-//                                        },
-//                                        movie = (uiState as PlayUiState.Success).movie)
-//                                }
-//                                is PlayUiState.Failed -> {
-//                                    Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-//                                        Text(text = (uiState as PlayUiState.Failed).error.toString(),
-//                                            style = MaterialTheme.typography.bodyLarge,
-//                                            color = MaterialTheme.colorScheme.error)
-//                                    }
-//                                }
-//                                is PlayUiState.Loading -> {
-//                                    Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-//                                        CircularProgressIndicator()
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
+            }
+
+            sizeClass == WindowWidthSizeClass.Expanded -> {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                ) {
+                    VideoView(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .windowInsetsPadding(WindowInsets.statusBars)
+                            .aspectRatio(1.5f, matchHeightConstraintsFirst = true),
+                        viewModel = viewModel,
+                        playInfo = playInfo,
+                        fullscreen = false
+                    )
+                    UiStateInfo(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .windowInsetsPadding(WindowInsets.systemBars)
+                            .padding(vertical = 16.dp),
+                        uiState = uiState,
+                        viewModel = viewModel
+                    )
+                }
             }
 
             else -> {
@@ -172,39 +160,53 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                         playInfo = playInfo,
                         fullscreen = false
                     )
-                    Surface(
+                    UiStateInfo(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f)
-                    ) {
-                        when (uiState) {
-                            is PlayUiState.Success -> {
-                                MovieDetailBody(
-                                    modifier = Modifier
-                                        .padding(horizontal = 16.dp)
-                                        .fillMaxSize(), playInfo = playInfo, onPlaysSetClick = {
-                                        viewModel.play(it)
-                                    }, movie = (uiState as PlayUiState.Success).movie
-                                )
-                            }
+                            .weight(1f),
+                        uiState = uiState,
+                        viewModel = viewModel
+                    )
+                }
+            }
+        }
+    }
+}
 
-                            is PlayUiState.Failed -> {
-                                Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-                                    Text(
-                                        text = (uiState as PlayUiState.Failed).error.toString(),
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
+@Composable
+private fun UiStateInfo(
+    modifier: Modifier = Modifier,
+    uiState: PlayUiState,
+    viewModel: PlayScreenViewModel,
+) {
+    val playInfo = uiState.playInfo
+    Surface(
+        modifier = modifier
+    ) {
+        when (uiState) {
+            is PlayUiState.Success -> {
+                MovieDetailBody(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp)
+                        .fillMaxSize(), playInfo = playInfo, onPlaysSetClick = {
+                        viewModel.play(it)
+                    }, movie = (uiState as PlayUiState.Success).movie
+                )
+            }
 
-                            is PlayUiState.Loading -> {
-                                Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
-                                    CircularProgressIndicator()
-                                }
-                            }
-                        }
-                    }
+            is PlayUiState.Failed -> {
+                Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
+                    Text(
+                        text = (uiState as PlayUiState.Failed).error.toString(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+
+            is PlayUiState.Loading -> {
+                Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
+                    CircularProgressIndicator()
                 }
             }
         }
@@ -220,7 +222,7 @@ fun VideoView(
     playInfo: PlayInfo?,
     viewModel: PlayScreenViewModel,
     modifier: Modifier = Modifier,
-    fullscreen: Boolean
+    fullscreen: Boolean,
 ) {
     val activity = LocalContext.current as Activity
     Surface(color = Color.Black) {
@@ -244,6 +246,7 @@ fun VideoView(
             }
         }) {
             it.player = playInfo?.mediaController
+            it.keepScreenOn =  playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
         }
     }
 }
