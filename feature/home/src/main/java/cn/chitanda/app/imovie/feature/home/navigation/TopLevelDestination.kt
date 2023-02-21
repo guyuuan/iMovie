@@ -58,7 +58,7 @@ enum class TopLevelDestination(
     ) ,
     Setting(
         icon = Icons.Default.Settings,
-        label = CommonString.search_screen_label,
+        label = CommonString.setting_screen_label,
         route = settingNavigationRoute,
         navRegistry = {
             it.settingScreen()

@@ -49,7 +49,7 @@ import coil.compose.AsyncImage
  *@createTime: 2022/11/20 12:41
  *@description:
  **/
-private const val TAG = "HomeScreen"
+private const val TAG = "RecentlyUpdateScreen"
 
 @Composable
 fun RecentlyUpdateScreen(
@@ -57,7 +57,7 @@ fun RecentlyUpdateScreen(
     navigationToPlay: NavigationToPlay = LocalNavigateToPlayScreen.current
 ) {
     val homeState by recentlyViewModel.homeState.collectAsState()
-    val isLandSpace = LocalWindowSizeClass.current.widthSizeClass > WindowWidthSizeClass.Compact
+    val isLandSpace = LocalWindowSizeClass.current.widthSizeClass == WindowWidthSizeClass.Expanded
     when (homeState) {
         is RecentlyUiState.Loading -> {
             Box(
