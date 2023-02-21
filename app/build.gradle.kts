@@ -20,7 +20,13 @@ android {
 
     buildTypes {
         val debug by getting {
-            signingConfig = signingConfigs.getByName("chitanda")
+            try {
+                signingConfigs.getByName("chitanda")
+            } catch (_: Throwable) {
+                null
+            }?.let {
+                signingConfig = it
+            }
             proguardFiles(getDefaultProguardFile("proguard-android.txt"),"proguard-rules.pro")
         }
         val release by getting {
