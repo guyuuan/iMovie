@@ -2,10 +2,7 @@ package cn.chitanda.app.imovie.feature.home
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -19,11 +16,9 @@ import cn.chitanda.app.imovie.feature.home.navigation.TopLevelDestination
  **/
 @Stable
 class HomeScreenState(
-    val navController: NavController,
-    initializeIndex: Int,
+    private val navController: NavController,
 ) {
-    var currentIndex: Int by mutableStateOf(initializeIndex)
-        private set
+
     val showTopAppBar: Boolean
         @Composable get() = currentTopLevelDestination == TopLevelDestination.RecentlyUpdate
     val currentDestination: NavDestination?
@@ -46,15 +41,14 @@ class HomeScreenState(
             launchSingleTop = true
             restoreState = true
         }
-        currentIndex = topLevelDestinations.indexOf(destination)
     }
 }
 
 @Composable
 fun rememberHomeScreenState(
-    navController: NavController, initializeIndex: Int = 0
+    navController: NavController,
 ): HomeScreenState {
-    return remember(navController, initializeIndex) {
-        HomeScreenState(navController, initializeIndex)
+    return remember(navController) {
+        HomeScreenState(navController)
     }
 }

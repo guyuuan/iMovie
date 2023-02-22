@@ -56,6 +56,7 @@ enum class TopLevelDestination(
             it.historyScreen()
         },
     ) ,
+
     Setting(
         icon = Icons.Default.Settings,
         label = CommonString.setting_screen_label,

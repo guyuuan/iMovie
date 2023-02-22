@@ -15,6 +15,8 @@ interface AppVersionRepository {
     suspend fun getAppLatestVersion(): GithubRelease
 
     fun downloadApk(url: String, savePath: String): Flow<DownloadState>
+
+    suspend fun checkAppNeedUpdate(currentVersion: String): GithubRelease?
 }
 
 class AppVersionRepositoryImp @Inject constructor(private val dataSource: AppNetworkDataSource) :
@@ -23,4 +25,18 @@ class AppVersionRepositoryImp @Inject constructor(private val dataSource: AppNet
 
     override fun downloadApk(url: String, savePath: String): Flow<DownloadState> =
         dataSource.download(url, savePath)
+
+    override suspend fun checkAppNeedUpdate(currentVersion: String): GithubRelease? {
+        val release = getAppLatestVersion()
+        val remoteVersion = release.tagName.replaceFirst("v", "")
+        return if (currentVersion.asVersionCode() < remoteVersion.asVersionCode()) {
+            release
+        } else {
+            null
+        }
+    }
+
+    private fun String.asVersionCode() =
+        replace(".", "").toLong()
+
 }

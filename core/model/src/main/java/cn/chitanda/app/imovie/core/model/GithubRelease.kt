@@ -12,13 +12,15 @@ import kotlinx.serialization.Serializable
 data class GithubRelease(
     @SerialName("tag_name")
     val tagName: String,
-    val assets: Assets,
+    val assets: List<Assets>,
 ) {
     @Serializable
     data class Assets(
         @SerialName("browser_download_url")
         val url: String,
-        val name:String,
-        val size:Long
+        val name: String,
+        val size: Long,
+        @SerialName("content_type")
+        val contentType: String,
     )
 }

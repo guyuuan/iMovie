@@ -55,7 +55,7 @@ fun HomeScreen() {
 private fun HomeBottomBar(homeScreenState: HomeScreenState) {
     NavigationBar(windowInsets = WindowInsets.navigationBars) {
         homeScreenState.topLevelDestinations.forEachIndexed { index, destination ->
-            NavigationBarItem(selected = homeScreenState.currentIndex == index, onClick = {
+            NavigationBarItem(selected = homeScreenState.currentTopLevelDestination == destination, onClick = {
                 homeScreenState.navigationToTopLevelDestination(destination)
             }, icon = {
                 Icon(

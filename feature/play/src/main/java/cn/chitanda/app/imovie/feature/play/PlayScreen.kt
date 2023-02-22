@@ -7,6 +7,7 @@ import android.util.Log
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,7 +44,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -116,7 +116,8 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                         modifier = Modifier.fillMaxSize(),
                         viewModel = viewModel,
                         playInfo = playInfo,
-                        fullscreen = true
+                        fullscreen = true,
+                        windowInsetsPadding = WindowInsets.systemBars
                     )
                 }
             }
@@ -128,11 +129,11 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                     VideoView(
                         modifier = Modifier
                             .fillMaxHeight()
-                            .windowInsetsPadding(WindowInsets.statusBars)
-                            .aspectRatio(1.5f, matchHeightConstraintsFirst = true),
+                            .weight(2f),
                         viewModel = viewModel,
                         playInfo = playInfo,
-                        fullscreen = false
+                        fullscreen = false,
+                        windowInsetsPadding = WindowInsets.systemBars
                     )
                     UiStateInfo(
                         modifier = Modifier
@@ -154,11 +155,11 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                     VideoView(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .windowInsetsPadding(WindowInsets.statusBars)
                             .aspectRatio(16 / 9f),
                         viewModel = viewModel,
                         playInfo = playInfo,
-                        fullscreen = false
+                        fullscreen = false,
+                        windowInsetsPadding = WindowInsets.statusBars
                     )
                     UiStateInfo(
                         modifier = Modifier
@@ -219,16 +220,21 @@ private const val TAG = "PlayScreen"
 @Composable
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 fun VideoView(
+    windowInsetsPadding: WindowInsets,
     playInfo: PlayInfo?,
     viewModel: PlayScreenViewModel,
     modifier: Modifier = Modifier,
     fullscreen: Boolean,
 ) {
     val activity = LocalContext.current as Activity
-    Surface(color = Color.Black) {
-        AndroidView(modifier = modifier, factory = {
+    Box(
+        modifier = Modifier
+            .background(color = Color.Black)
+            .windowInsetsPadding(windowInsetsPadding) then modifier
+    ) {
+        AndroidView(modifier = Modifier.fillMaxSize(), factory = {
             PlayerView(it).apply {
-                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
+//                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
                 layoutParams = FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
                     FrameLayout.LayoutParams.MATCH_PARENT
@@ -246,7 +252,7 @@ fun VideoView(
             }
         }) {
             it.player = playInfo?.mediaController
-            it.keepScreenOn =  playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
+            it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
         }
     }
 }
