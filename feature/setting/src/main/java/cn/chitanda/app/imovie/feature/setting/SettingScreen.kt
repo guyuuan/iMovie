@@ -1,21 +1,36 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 
 package cn.chitanda.app.imovie.feature.setting
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.with
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Downloading
+import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.colorResource
@@ -44,48 +60,89 @@ import cn.chitanda.app.imovie.core.common.R.drawable as CommonDrawable
 fun SettingScreen(viewModel: SettingScreenViewModel = hiltViewModel()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val uiState by viewModel.settingUiState.collectAsStateWithLifecycle()
-
-    Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            LargeTopAppBar(title = {
-                Text("iMovie")
-            }, navigationIcon = {
-                IconButton(onClick = { /*TODO*/ }) {
-                    Icon(
-                        modifier = Modifier
-                            .size(32.dp)
-                            .background(
-                                color = colorResource(id = CommonColor.ic_launcher_background),
-                                shape = CircleShape
-                            ),
-                        painter = painterResource(id = CommonDrawable.ic_launcher_foreground),
-                        tint = colorResource(id = CommonColor.ic_launcher_foreground),
-                        contentDescription = null
-                    )
-                }
-            }, scrollBehavior = scrollBehavior)
-        }
-    ) { paddingValue ->
+    Scaffold(modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
+        LargeTopAppBar(title = {
+            Text("iMovie")
+        }, navigationIcon = {
+            IconButton(onClick = { /*TODO*/ }) {
+                Icon(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(
+                            color = colorResource(id = CommonColor.ic_launcher_background),
+                            shape = CircleShape
+                        ),
+                    painter = painterResource(id = CommonDrawable.ic_launcher_foreground),
+                    tint = colorResource(id = CommonColor.ic_launcher_foreground),
+                    contentDescription = null
+                )
+            }
+        }, scrollBehavior = scrollBehavior
+        )
+    }) { paddingValue ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValue)
-                .fillMaxSize(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+                .fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
         ) {
             item {
-                Surface(
+                AppVersionItem(
                     Modifier
                         .fillMaxWidth()
-                        .height(IntrinsicSize.Min)
-                        ,
-                    shape = MaterialTheme.shapes.large,
-                    tonalElevation = 8.dp
-                ) {
-                    Column(modifier = Modifier.padding(vertical = 16.dp, horizontal = 12.dp)){
-                        Text(text = uiState.appVersion.toString())
-                        Text(text = uiState.appVersion.currentVersion)
-                    }
+                        .height(IntrinsicSize.Min),
+                    viewModel = viewModel,
+                    version = uiState.appVersion,
+                    contentPadding = PaddingValues(vertical = 18.dp, horizontal = 24.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppVersionItem(
+    modifier: Modifier = Modifier,
+    viewModel: SettingScreenViewModel,
+    version: SettingUiState.AppVersion,
+    contentPadding: PaddingValues = PaddingValues(),
+) {
+    Surface(
+        modifier = modifier, shape = MaterialTheme.shapes.large, tonalElevation = 8.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(contentPadding),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AnimatedContent(targetState = when (version) {
+                is SettingUiState.AppVersion.NeedUpdate -> Icons.Default.Update
+                is SettingUiState.AppVersion.Downloading -> Icons.Default.Downloading
+                else -> Icons.Default.CheckCircle
+            }, transitionSpec = {
+                (scaleIn() + fadeIn() with scaleOut() + fadeOut()).using(
+                    SizeTransform(clip = false)
+                )
+            }) { icon ->
+                Icon(
+                    imageVector = icon, contentDescription = "", modifier = Modifier.size(32.dp)
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                AnimatedContent(targetState = when (version) {
+                    is SettingUiState.AppVersion.NeedUpdate -> "检测到新版本: ${version.release.tagName}"
+                    else -> "已经是最新版本了"
+                }, transitionSpec = {
+                    (slideInVertically { height -> height } + fadeIn() with slideOutVertically { height -> -height } + fadeOut()).using(
+                        SizeTransform(clip = false)
+                    )
+                }) { text ->
+                    Text(
+                        text = text, style = MaterialTheme.typography.titleLarge
+                    )
                 }
+                Text(text = "当前版本: v${version.currentVersion}")
             }
         }
     }

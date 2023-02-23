@@ -36,7 +36,7 @@ fun HomeScreen() {
         bottomBar = {
             HomeBottomBar(homeScreenState)
         },
-        contentWindowInsets = WindowInsets(0,0,0,0)
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) {
         NavHost(
             modifier = Modifier.padding(it),
@@ -54,15 +54,19 @@ fun HomeScreen() {
 @Composable
 private fun HomeBottomBar(homeScreenState: HomeScreenState) {
     NavigationBar(windowInsets = WindowInsets.navigationBars) {
-        homeScreenState.topLevelDestinations.forEachIndexed { index, destination ->
-            NavigationBarItem(selected = homeScreenState.currentTopLevelDestination == destination, onClick = {
-                homeScreenState.navigationToTopLevelDestination(destination)
-            }, icon = {
-                Icon(
-                    destination.icon, contentDescription = stringResource(id = destination.label)
-                )
-            }, label = { Text(text = stringResource(id = destination.label)) })
+        homeScreenState.topLevelDestinations.forEach { destination ->
+            NavigationBarItem(
+                selected = homeScreenState.currentTopLevelDestination == destination,
+                onClick = {
+                    homeScreenState.navigationToTopLevelDestination(destination)
+                },
+                icon = {
+                    Icon(
+                        destination.icon,
+                        contentDescription = stringResource(id = destination.label)
+                    )
+                },
+                label = { Text(text = stringResource(id = destination.label)) })
         }
     }
-
 }

@@ -34,6 +34,7 @@ class SettingScreenViewModel @Inject constructor(
             flow<SettingUiState> {
                 val version = getAppCurrentVerion()
                 if (version != null) {
+                    emit(SettingUiState.Success(SettingUiState.AppVersion.Newest(version)))
                     val release = appVersionRepository.checkAppNeedUpdate(version)
                     if (release != null) {
                         emit(
@@ -58,7 +59,7 @@ class SettingScreenViewModel @Inject constructor(
                 }
             }.catch {
                 it.printStackTrace()
-                emit(SettingUiState.Error(error = it))
+                emit(SettingUiState.Error(error = it, appVersion = _settingUiState.value.appVersion))
             }.collectLatest {
                 _settingUiState.emit(it)
             }
