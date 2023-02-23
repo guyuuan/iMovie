@@ -8,4 +8,7 @@
     <string name="revoke">撤销</string>
     <string name="continue_playing">继续播放</string>
     <string name="setting_screen_label">设置</string>
+    <string name="setting_have_new_version">"检测到新版本: "</string>
+    <string name="setting_current_version">当前版本:</string>
+    <string name="setting_is_newest">已经是最新版本了</string>
 </resources>

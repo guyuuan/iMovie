@@ -32,7 +32,7 @@ class SettingScreenViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             flow<SettingUiState> {
-                val version = getAppCurrentVerion()
+                val version = getAppCurrentVersion()
                 if (version != null) {
                     emit(SettingUiState.Success(SettingUiState.AppVersion.Newest(version)))
                     val release = appVersionRepository.checkAppNeedUpdate(version)
@@ -40,7 +40,8 @@ class SettingScreenViewModel @Inject constructor(
                         emit(
                             SettingUiState.Success(
                                 appVersion = SettingUiState.AppVersion.NeedUpdate(
-                                    release, version
+                                    release, currentVersion = "v$version"
+
                                 )
                             )
                         )
@@ -48,7 +49,7 @@ class SettingScreenViewModel @Inject constructor(
                         emit(
                             SettingUiState.Success(
                                 appVersion = SettingUiState.AppVersion.Newest(
-                                    version
+                                    currentVersion = "v$version"
                                 )
                             )
                         )
@@ -59,14 +60,19 @@ class SettingScreenViewModel @Inject constructor(
                 }
             }.catch {
                 it.printStackTrace()
-                emit(SettingUiState.Error(error = it, appVersion = _settingUiState.value.appVersion))
+                emit(
+                    SettingUiState.Error(
+                        error = it,
+                        appVersion = _settingUiState.value.appVersion
+                    )
+                )
             }.collectLatest {
                 _settingUiState.emit(it)
             }
         }
     }
 
-    private fun getAppCurrentVerion(): String? {
+    private fun getAppCurrentVersion(): String? {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 context.packageManager.getPackageInfo(

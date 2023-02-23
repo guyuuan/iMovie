@@ -25,13 +25,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,11 +45,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.chitanda.app.imovie.core.common.R.color as CommonColor
 import cn.chitanda.app.imovie.core.common.R.drawable as CommonDrawable
+import cn.chitanda.app.imovie.core.common.R.string as CommonString
 
 /**
  * @author: Chen
@@ -125,14 +127,17 @@ private fun AppVersionItem(
                 )
             }) { icon ->
                 Icon(
-                    imageVector = icon, contentDescription = "", modifier = Modifier.size(32.dp)
+                    imageVector = icon, contentDescription = "", modifier = Modifier.size(32.dp),
                 )
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 AnimatedContent(targetState = when (version) {
-                    is SettingUiState.AppVersion.NeedUpdate -> "检测到新版本: ${version.release.tagName}"
-                    else -> "已经是最新版本了"
+                    is SettingUiState.AppVersion.NeedUpdate -> stringResource(
+                        id = CommonString.setting_have_new_version, version.release.tagName
+                    )
+
+                    else -> stringResource(id = CommonString.setting_is_newest)
                 }, transitionSpec = {
                     (slideInVertically { height -> height } + fadeIn() with slideOutVertically { height -> -height } + fadeOut()).using(
                         SizeTransform(clip = false)
@@ -142,7 +147,12 @@ private fun AppVersionItem(
                         text = text, style = MaterialTheme.typography.titleLarge
                     )
                 }
-                Text(text = "当前版本: v${version.currentVersion}")
+                Text(
+                    text = stringResource(
+                        id = CommonString.setting_current_version,
+                        version.currentVersion
+                    )
+                )
             }
         }
     }
