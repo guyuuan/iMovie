@@ -6,8 +6,12 @@ package cn.chitanda.app.imovie.core
  * @description:
  **/
 sealed class DownloadState {
-    class Downloading(val progress: Float) : DownloadState()
-    class Failed(val error: Throwable) : DownloadState()
+    abstract val progress: Int
 
-    object Finish : DownloadState()
+    data class Downloading(override val progress: Int) : DownloadState()
+    data class Failed(val error: Throwable, override val progress: Int=0) : DownloadState()
+
+    data class Finish(val file:String) : DownloadState() {
+        override val progress: Int = 100
+    }
 }

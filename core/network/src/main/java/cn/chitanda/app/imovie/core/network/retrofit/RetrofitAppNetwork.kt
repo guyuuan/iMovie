@@ -1,5 +1,6 @@
 package cn.chitanda.app.imovie.core.network.retrofit
 
+import android.util.Log
 import cn.chitanda.app.imovie.core.DownloadState
 import cn.chitanda.app.imovie.core.model.GithubRelease
 import cn.chitanda.app.imovie.core.model.Movie
@@ -19,6 +20,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.ResponseBody
 import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
@@ -30,6 +32,7 @@ import retrofit2.http.Url
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.roundToInt
 
 /**
  *@author: Chen
@@ -58,7 +61,7 @@ private interface RetrofitAppNetworkApi {
 
     @GET
     @Streaming
-    suspend fun download(@Url url: String): ResponseBody
+    suspend fun download(@Url url: String): Response<ResponseBody>
 }
 
 private const val AppBaseUrl = "https://tv.chitanda.cn"
@@ -98,27 +101,43 @@ class RetrofitAppNetwork @Inject constructor(
 
     override fun download(url: String, savePath: String): Flow<DownloadState> =
         flow {
-            emit(DownloadState.Downloading(0f))
-            val tempFile = File("$savePath.tmp")
+            emit(DownloadState.Downloading(0))
             val response = networkApi.download(url)
-            response.byteStream().use { input ->
+            val filename = response.headers()["content-disposition"]?.split(";")
+                ?.find { s ->
+                    s.startsWith("filename=")
+                }?.replace("filename=", "")
+                ?: url.split("/").last()
+            val filePath = "$savePath/$filename"
+            val tempFile = File("$filePath.tmp")
+            if(tempFile.exists()){
+                tempFile.delete()
+            }
+            response.body()?.byteStream()?.use { input ->
                 tempFile.outputStream().use { output ->
-                    val total = response.contentLength()
+                    val total = response.body()!!.contentLength()
                     var saved = 0L
                     val buffer = ByteArray(8 * 1024)
                     var len = input.read(buffer)
                     while (len >= 0) {
                         output.write(buffer, 0, len)
                         saved += len
-                        emit(DownloadState.Downloading((saved / total.toFloat())))
+                        emit(
+                            DownloadState.Downloading(
+                                ((saved / total.toFloat()) * 100).roundToInt().coerceAtMost(100)
+                            )
+                        )
                         len = input.read(buffer)
                     }
                 }
             }
-            tempFile.renameTo(File(savePath))
-            emit(DownloadState.Finish)
+            tempFile.renameTo(File(filePath))
+            emit(DownloadState.Finish(filePath))
         }.catch {
+            Log.e(TAG, "download: ", it)
             emit(DownloadState.Failed(it))
         }.flowOn(Dispatchers.IO).distinctUntilChanged()
 
 }
+
+private const val TAG = "RetrofitAppNetwork"

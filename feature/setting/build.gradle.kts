@@ -6,3 +6,5 @@ plugins {
 android {
     namespace = "cn.chitanda.app.imovie.feature.setting"
 }
+dependencies{
+}

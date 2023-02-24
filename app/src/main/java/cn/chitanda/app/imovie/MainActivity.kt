@@ -60,7 +60,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 
     override fun onStart() {

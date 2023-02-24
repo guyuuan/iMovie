@@ -7,12 +7,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.chitanda.app.imovie.core.data.repository.AppVersionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 /**
@@ -84,6 +86,39 @@ class SettingScreenViewModel @Inject constructor(
         } catch (_: Exception) {
             null
         }
+    }
+
+    fun startDownload(url: String) {
+        viewModelScope.launch {
+            appVersionRepository.downloadApk(url, savePath = context.cacheDir.path).collect {
+                val uiState = withContext(Dispatchers.IO) {
+                    _settingUiState.value
+                }
+                when (val version = uiState.appVersion) {
+                    is SettingUiState.AppVersion.Downloading -> {
+                        _settingUiState.emit(SettingUiState.Success(version.copy(state = it)))
+                    }
+
+                    is SettingUiState.AppVersion.NeedUpdate -> {
+                        _settingUiState.emit(
+                            SettingUiState.Success(
+                                SettingUiState.AppVersion.Downloading(
+                                    release = version.release,
+                                    currentVersion = version.currentVersion,
+                                    state = it
+                                )
+                            )
+                        )
+                    }
+                    else -> {
+
+                    }
+                }
+            }
+        }
+    }
+
+    fun startInstall(){
     }
 
 }

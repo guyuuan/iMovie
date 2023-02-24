@@ -11,4 +11,9 @@
     <string name="setting_have_new_version">检测到新版本: %s</string>
     <string name="setting_current_version">当前版本: %s</string>
     <string name="setting_is_newest">已经是最新版本了</string>
+    <string name="setting_click_to_downloading">点我下载!</string>
+    <string name="setting_click_to_install">点我安装更新!</string>
+    <string name="setting_downloading_finish">下载完成</string>
+    <string name="setting_is_downloading">正在下载%s</string>
+    <string name="setting_downloading_failed">下载失败</string>
 </resources>

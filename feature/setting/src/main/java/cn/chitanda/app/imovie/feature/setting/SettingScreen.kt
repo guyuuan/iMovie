@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,9 +47,11 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cn.chitanda.app.imovie.core.DownloadState
 import cn.chitanda.app.imovie.core.common.R.color as CommonColor
 import cn.chitanda.app.imovie.core.common.R.drawable as CommonDrawable
 import cn.chitanda.app.imovie.core.common.R.string as CommonString
@@ -131,11 +134,33 @@ private fun AppVersionItem(
                 )
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 AnimatedContent(targetState = when (version) {
                     is SettingUiState.AppVersion.NeedUpdate -> stringResource(
                         id = CommonString.setting_have_new_version, version.release.tagName
                     )
+
+                    is SettingUiState.AppVersion.Downloading -> {
+                        when (val downloadState = version.state) {
+                            is DownloadState.Downloading -> {
+                                stringResource(
+                                    id = CommonString.setting_is_downloading,
+                                    version.release.assets.first().name
+                                )
+                            }
+
+                            is DownloadState.Finish -> {
+                                stringResource(id = CommonString.setting_downloading_finish)
+                            }
+
+                            is DownloadState.Failed -> {
+                                stringResource(id = CommonString.setting_downloading_failed) + " ${downloadState.error}"
+                            }
+                        }
+                    }
 
                     else -> stringResource(id = CommonString.setting_is_newest)
                 }, transitionSpec = {
@@ -144,16 +169,50 @@ private fun AppVersionItem(
                     )
                 }) { text ->
                     Text(
-                        text = text, style = MaterialTheme.typography.titleLarge
+                        text = text, style = MaterialTheme.typography.titleLarge, maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Text(
                     text = stringResource(
-                        id = CommonString.setting_current_version,
-                        version.currentVersion
+                        id = CommonString.setting_current_version, version.currentVersion
                     )
                 )
             }
+
+
+            when (version) {
+                is SettingUiState.AppVersion.NeedUpdate -> {
+                    TextButton(onClick = {
+                        version.release.assets.firstOrNull()
+                            ?.let { viewModel.startDownload(it.url) }
+                    }) {
+                        Text(text = stringResource(id = CommonString.setting_click_to_downloading))
+                    }
+                }
+
+                is SettingUiState.AppVersion.Downloading -> {
+                    when (val downloadState = version.state) {
+                        is DownloadState.Downloading -> {
+                            Text(text = "${downloadState.progress}%")
+                        }
+
+                        is DownloadState.Finish -> {
+                            TextButton(onClick = {
+
+                            }) {
+                                Text(text = stringResource(id = CommonString.setting_click_to_install))
+                            }
+                        }
+
+                        else -> {
+                        }
+                    }
+                }
+
+                else -> {}
+            }
         }
+
     }
 }
