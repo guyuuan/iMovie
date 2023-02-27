@@ -28,5 +28,5 @@ jobs:
       # Runs a single command using the runners shell
       - name: Run a multi-line script
         run: |
-          export APP_VERSION_NAME=$GITHUB_REF_NAME,
-          echo $APP_VERSION_NAME.
+          export APP_VERSION_NAME=$GITHUB_REF_NAME
+          echo $APP_VERSION_NAME
