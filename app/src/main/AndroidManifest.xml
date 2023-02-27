@@ -41,6 +41,13 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+        <provider
+            android:authorities="cn.chitanda.app.imovie.file_provider"
+            android:exported="false"
+            android:grantUriPermissions="true"
+            android:name="androidx.core.content.FileProvider">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/files_path"/>
+        </provider>
     </application>
-
 </manifest>

@@ -1,7 +1,12 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+@file:OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalAnimationApi::class,
+)
 
 package cn.chitanda.app.imovie.feature.setting
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
@@ -28,6 +33,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Downloading
+import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -44,14 +50,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.chitanda.app.imovie.core.DownloadState
+import java.io.File
 import cn.chitanda.app.imovie.core.common.R.color as CommonColor
 import cn.chitanda.app.imovie.core.common.R.drawable as CommonDrawable
 import cn.chitanda.app.imovie.core.common.R.string as CommonString
@@ -198,14 +207,25 @@ private fun AppVersionItem(
                         }
 
                         is DownloadState.Finish -> {
+                            val cxt = LocalContext.current
                             TextButton(onClick = {
-
+                                installApk(context = cxt, downloadState.file)
                             }) {
                                 Text(text = stringResource(id = CommonString.setting_click_to_install))
                             }
+
                         }
 
                         else -> {
+                            IconButton(onClick = {
+                                version.release.assets.firstOrNull()
+                                    ?.let { viewModel.startDownload(it.url) }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.RestartAlt,
+                                    contentDescription = null
+                                )
+                            }
                         }
                     }
                 }
@@ -214,5 +234,19 @@ private fun AppVersionItem(
             }
         }
 
+    }
+}
+
+private fun installApk(context: Context, file: String) {
+    val apk = File(file)
+    if (apk.exists()) {
+
+        val uri = FileProvider.getUriForFile(context, "cn.chitanda.app.imovie.file_provider", apk)
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, "application/vnd.android.package-archive")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        context.startActivity(intent)
     }
 }

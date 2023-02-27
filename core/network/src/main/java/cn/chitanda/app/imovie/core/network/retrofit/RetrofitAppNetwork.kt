@@ -72,7 +72,9 @@ class RetrofitAppNetwork @Inject constructor(
 ) : AppNetworkDataSource {
 
     private val networkApi = Retrofit.Builder().baseUrl(AppBaseUrl)
-        .client(OkHttpClient.Builder().addInterceptor(HttpLoggingInterceptor().apply {
+        .client(OkHttpClient.Builder().addInterceptor(HttpLoggingInterceptor{
+            Log.d(TAG, it)
+        }.apply {
             setLevel(HttpLoggingInterceptor.Level.BODY)
         }).build()).addConverterFactory(
             @OptIn(ExperimentalSerializationApi::class) networkJson.asConverterFactory(

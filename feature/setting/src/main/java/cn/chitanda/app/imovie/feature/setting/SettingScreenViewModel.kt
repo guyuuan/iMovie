@@ -90,7 +90,7 @@ class SettingScreenViewModel @Inject constructor(
 
     fun startDownload(url: String) {
         viewModelScope.launch {
-            appVersionRepository.downloadApk(url, savePath = context.cacheDir.path).collect {
+            appVersionRepository.downloadApk(" https://ghproxy.com/$url", savePath = context.cacheDir.path).collect {
                 val uiState = withContext(Dispatchers.IO) {
                     _settingUiState.value
                 }
@@ -116,9 +116,6 @@ class SettingScreenViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun startInstall(){
     }
 
 }
