@@ -6,14 +6,18 @@ on:
   push:
     tags: 
       - "v*"
-env:
-  APP_VERSION_NAME: "$GITHUB_REF_NAME"
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - name: Setup App Version
+        run: |
+          export APP_VERSION_NAME=$GITHUB_REF_NAME
+          echo $APP_VERSION_NAME
+
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
