@@ -37,6 +37,10 @@ class AppVersionRepositoryImp @Inject constructor(private val dataSource: AppNet
     }
 
     private fun String.asVersionCode() =
-        replace(".", "").toLong()
+      try {
+          replace(".", "").toLong()
+      }catch (e:NumberFormatException){
+          0L
+      }
 
 }
