@@ -5,7 +5,9 @@ import com.android.build.api.dsl.ApplicationExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.configure
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 import java.util.Properties
 
 /**
@@ -23,11 +25,19 @@ class AndroidAppConventionPlugin : Plugin<Project> {
             extensions.configure<ApplicationExtension> {
 
                 configureKotlinAndroid(this)
-                defaultConfig.targetSdk = 33
-                defaultConfig.versionName = try {
-                    System.getenv("APP_VERSION_NAME").replaceFirst("v","")
-                } catch (_: Throwable) {
-                    "0.0.1"
+                defaultConfig {
+                    targetSdk = 33
+                    versionCode = try {
+                        "git rev-list HEAD --first-parent --count".execute().text().trim().toInt()
+                    } catch (_: Throwable) {
+                        1
+                    }
+                    versionName = try {
+                        "git describe --tags".execute().text().trim().replaceFirst("v", "")
+                    } catch (e: Throwable) {
+                        print("get version code error $e")
+                        "0.0.1"
+                    }
                 }
 //                configureFlavors(this)
                 val propertiesFile = file("${project.rootProject.projectDir}/local.properties")
@@ -46,5 +56,23 @@ class AndroidAppConventionPlugin : Plugin<Project> {
             }
 
         }
+    }
+
+    private fun String.execute(): Process {
+        val runtime = Runtime.getRuntime()
+        return runtime.exec(this)
+    }
+
+    private fun Process.text(): String {
+        var output = ""
+        val inputStream = this.inputStream
+        val isr = InputStreamReader(inputStream)
+        val reader = BufferedReader(isr)
+        var line = reader.readLine()
+        while (line != null) {
+            output += line + "\n"
+            line = reader.readLine()
+        }
+        return output
     }
 }
