@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -49,7 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.model.MovieDetail
@@ -191,14 +191,14 @@ private fun UiStateInfo(
                         .padding(horizontal = 16.dp)
                         .fillMaxSize(), playInfo = playInfo, onPlaysSetClick = {
                         viewModel.play(it)
-                    }, movie = (uiState as PlayUiState.Success).movie
+                    }, movie = uiState.movie
                 )
             }
 
             is PlayUiState.Failed -> {
                 Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
                     Text(
-                        text = (uiState as PlayUiState.Failed).error.toString(),
+                        text = uiState.error.toString(),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -355,8 +355,10 @@ private fun MoviePlaySets(
     playInfo: PlayInfo?,
     onClick: (PlaysSet) -> Unit,
 ) {
+    val listState = rememberLazyListState()
     Surface(modifier = modifier, tonalElevation = 8.dp, shape = MaterialTheme.shapes.large) {
         LazyRow(
+            state = listState,
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -364,10 +366,16 @@ private fun MoviePlaySets(
             items(sets) { set ->
                 PlaySetItem(
                     playSet = set,
-                    isSelected = set.mediaId == playInfo?.mediaController?.currentMediaItem?.mediaId && playInfo is PlayInfo.Playing,
+                    isSelected = set.mediaId == playInfo?.mediaController?.currentMediaItem?.mediaId,
                     onClick = onClick
                 )
             }
+        }
+    }
+    LaunchedEffect(key1 = playInfo) {
+        val index = playInfo?.mediaController?.currentMediaItemIndex
+        if (index != null) {
+            listState.scrollToItem(index)
         }
     }
 }
