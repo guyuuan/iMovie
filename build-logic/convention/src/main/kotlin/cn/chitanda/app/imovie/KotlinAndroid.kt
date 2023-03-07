@@ -13,14 +13,14 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
  *@description:
  **/
 internal fun Project.configureKotlinAndroid(
-    commonExtension: CommonExtension<*,*,*,*>
-){
+    commonExtension: CommonExtension<*, *, *, *>
+) {
     commonExtension.apply {
         compileSdk = 33
 
         defaultConfig { minSdk = 26 }
 
-        compileOptions{
+        compileOptions {
             sourceCompatibility = JavaVersion.VERSION_11
             targetCompatibility = JavaVersion.VERSION_11
         }
@@ -28,7 +28,7 @@ internal fun Project.configureKotlinAndroid(
         kotlinOptions {
             // Treat all Kotlin warnings as errors (disabled by default)
             // Override by setting warningsAsErrors=true in your ~/.gradle/gradle.properties
-            val warningsAsError :String? by project
+            val warningsAsError: String? by project
             allWarningsAsErrors = warningsAsError.toBoolean()
 
             freeCompilerArgs = freeCompilerArgs + listOf(
@@ -49,6 +49,6 @@ internal fun Project.configureKotlinAndroid(
     }
 }
 
-internal  fun CommonExtension<*, *, *, *>.kotlinOptions(block: KotlinJvmOptions.() -> Unit) {
+internal fun CommonExtension<*, *, *, *>.kotlinOptions(block: KotlinJvmOptions.() -> Unit) {
     (this as ExtensionAware).extensions.configure("kotlinOptions", block)
 }
