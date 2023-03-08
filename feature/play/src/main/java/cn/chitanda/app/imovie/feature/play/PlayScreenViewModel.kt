@@ -4,12 +4,12 @@ import android.media.session.PlaybackState
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.session.MediaBrowser
 import cn.chitanda.app.imovie.core.data.repository.HistoryRepository
 import cn.chitanda.app.imovie.core.data.repository.MoviesRepository
+import cn.chitanda.app.imovie.core.ext.safeLaunch
 import cn.chitanda.app.imovie.core.media.AppMediaController
 import cn.chitanda.app.imovie.core.media.MediaItemTree
 import cn.chitanda.app.imovie.core.model.HistoryResource
@@ -25,7 +25,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -43,20 +42,25 @@ class PlayScreenViewModel @Inject constructor(
     private val historyRepository: HistoryRepository,
 ) : ViewModel(), Player.Listener {
     private var hasPlayed = false
+
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         super.onIsPlayingChanged(isPlaying)
         hasPlayed = true
         val controller = _controller ?: return
         Log.d(TAG, "onIsPlayingChanged: $isPlaying")
-        viewModelScope.launch {
+        safeLaunch {
             val history = updateHistory()
             _playUiState.emit(
                 uiState.update(
-                    history = history, playInfo = if (isPlaying) PlayInfo.Playing(
-                        controller, fullScreen = uiState.playInfo?.fullScreen ?: false
-                    ) else PlayInfo.Pausing(
-                        controller, fullScreen = uiState.playInfo?.fullScreen ?: false
-                    )
+                    history = history, playInfo = if (isPlaying) {
+                        PlayInfo.Playing(
+                            controller, fullScreen = uiState.playInfo?.fullScreen ?: false
+                        )
+                    } else {
+                        PlayInfo.Pausing(
+                            controller, fullScreen = uiState.playInfo?.fullScreen ?: false
+                        )
+                    }
                 )
             )
         }
@@ -67,7 +71,7 @@ class PlayScreenViewModel @Inject constructor(
         val controller = _controller ?: return
         when (playbackState) {
             Player.STATE_IDLE -> {
-                viewModelScope.launch {
+                safeLaunch {
                     _playUiState.emit(
                         uiState.update(
                             playInfo = PlayInfo.Ideal(
@@ -80,7 +84,7 @@ class PlayScreenViewModel @Inject constructor(
             }
 
             Player.STATE_BUFFERING -> {
-                viewModelScope.launch {
+                safeLaunch {
                     _playUiState.emit(
                         uiState.update(
                             playInfo = PlayInfo.Buffering(
@@ -93,7 +97,7 @@ class PlayScreenViewModel @Inject constructor(
             }
 
             Player.STATE_READY -> {
-                viewModelScope.launch {
+                safeLaunch {
                     _playUiState.emit(
                         uiState.update(
                             playInfo = PlayInfo.Ready(
@@ -106,7 +110,7 @@ class PlayScreenViewModel @Inject constructor(
             }
 
             Player.STATE_ENDED -> {
-                viewModelScope.launch {
+                safeLaunch {
                     _playUiState.emit(
                         uiState.update(
                             playInfo = PlayInfo.Ending(
@@ -134,7 +138,7 @@ class PlayScreenViewModel @Inject constructor(
     init {
         Log.w(TAG, "$TAG: init")
         appMediaController.viewModelInitialize { setController(null) }
-        viewModelScope.launch {
+        safeLaunch {
             moviesRepository.getMovieDetail(playArgs.playId).map<Movie, PlayUiState> {
                 withContext(Dispatchers.IO) {
                     val movie = it.asMovieDetail()
@@ -160,7 +164,7 @@ class PlayScreenViewModel @Inject constructor(
     private fun setController(movieId: String?) {
         val controller = _controller ?: return
         controller.playWhenReady = playArgs.playFromHistory
-        viewModelScope.launch {
+        safeLaunch {
             _playUiState.emit(
                 uiState.update(
                     playInfo = if (controller.isPlaying) {
@@ -211,6 +215,7 @@ class PlayScreenViewModel @Inject constructor(
     suspend fun updateHistory(): HistoryResource? = withContext(Dispatchers.IO) {
         if (!hasPlayed) return@withContext null
         val controller = _controller ?: return@withContext null
+        if (withContext(Dispatchers.Main){ controller.currentMediaItemIndex } < 0) return@withContext null
         var update = true
         var movieId: Long? = null
         val history = withContext(Dispatchers.Main) {
@@ -250,7 +255,7 @@ class PlayScreenViewModel @Inject constructor(
 
     fun setFullScreen(fullScreen: Boolean) {
         val state = playUiState.value
-        viewModelScope.launch {
+        safeLaunch {
             _playUiState.emit(state.update(state.playInfo?.update(fullScreen = fullScreen)))
         }
     }

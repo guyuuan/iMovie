@@ -9,5 +9,6 @@ android {
 
 dependencies {
     implementation(libs.kotlinx.coroutines.android)
+    api(libs.androidx.lifecycle.viewModel.ktx)
 //    testImplementation(project(":core:testing"))
 }

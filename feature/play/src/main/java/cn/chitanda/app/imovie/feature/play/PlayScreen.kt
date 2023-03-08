@@ -45,11 +45,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.model.MovieDetail
@@ -75,8 +78,6 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val systemBarController = rememberSystemUiController()
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(key1 = fullScreen) {
-        Log.d("HideBar", "fullscreen :$fullScreen ")
-        Log.d("HideBar", "play info :$playInfo ")
         if (fullScreen) {
             hideSystemBar(systemBarController)
         } else {
@@ -254,7 +255,30 @@ fun VideoView(
             it.player = playInfo?.mediaController
             it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
         }
+        val lifecycleOwner = LocalLifecycleOwner.current
+
+        DisposableEffect(key1 = lifecycleOwner, key2 = playInfo) {
+            val observer = object : DefaultLifecycleObserver {
+                override fun onResume(owner: LifecycleOwner) {
+                    Log.d(TAG, "onResume: ${playInfo?.mediaController?.currentMediaItemIndex}")
+                    playInfo?.mediaController?.play()
+                    Log.d(TAG, "onResume: ${playInfo?.mediaController?.isPlaying}")
+                }
+
+                override fun onPause(owner: LifecycleOwner) {
+                    playInfo?.mediaController?.pause()
+                    Log.d(TAG, "onPause: ${playInfo?.mediaController?.isPlaying}")
+                    Log.d(TAG, "onPause: ${playInfo?.mediaController?.currentMediaItemIndex}")
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose {
+                Log.d(TAG, "VideoView: onDispose")
+                lifecycleOwner.lifecycle.removeObserver(observer)
+            }
+        }
     }
+
 }
 
 private fun hideSystemBar(systemBarController: SystemUiController) {
@@ -374,7 +398,7 @@ private fun MoviePlaySets(
     }
     LaunchedEffect(key1 = playInfo) {
         val index = playInfo?.mediaController?.currentMediaItemIndex
-        if (index != null) {
+        if (index != null && index >= 0) {
             listState.scrollToItem(index)
         }
     }
