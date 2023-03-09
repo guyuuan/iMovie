@@ -1,5 +1,7 @@
 package cn.chitanda.app.imovie.feature.play
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.media3.session.MediaController
 import cn.chitanda.app.imovie.core.model.HistoryResource
 import cn.chitanda.app.imovie.core.model.MovieDetail
@@ -11,7 +13,7 @@ import cn.chitanda.app.imovie.core.model.MovieDetail
  **/
 sealed interface PlayUiState {
     val playInfo: PlayInfo?
-    fun update(playInfo: PlayInfo?, history: HistoryResource?=null): PlayUiState
+    fun update(playInfo: PlayInfo?, history: HistoryResource? = null): PlayUiState
     data class Success(
         val movie: MovieDetail,
         val history: HistoryResource? = null,
@@ -22,7 +24,7 @@ sealed interface PlayUiState {
                 Failed(error = Error("update play info is null"))
             } else {
                 copy(
-                    history = this.history?:history,
+                    history = this.history ?: history,
                     playInfo = playInfo,
                 )
             }
@@ -97,5 +99,18 @@ sealed class PlayInfo(
     ) : PlayInfo() {
         override fun update(mediaController: MediaController?, fullScreen: Boolean): PlayInfo =
             copy(mediaController = mediaController, fullScreen = fullScreen)
+    }
+}
+
+enum class ScreenState {
+    Vertical, Horizontal, FullScreen
+}
+
+@Composable
+fun rememberScreenState(fullScreen: Boolean, landSpace: Boolean) = remember(fullScreen, landSpace) {
+    when {
+        fullScreen -> ScreenState.FullScreen
+        landSpace && !fullScreen -> ScreenState.Horizontal
+        else -> ScreenState.Vertical
     }
 }

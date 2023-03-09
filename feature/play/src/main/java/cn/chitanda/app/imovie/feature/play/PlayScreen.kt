@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
+
 package cn.chitanda.app.imovie.feature.play
 
 import android.annotation.SuppressLint
@@ -7,6 +9,16 @@ import android.util.Log
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.updateTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
@@ -29,13 +42,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -57,6 +73,7 @@ import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.model.MovieDetail
 import cn.chitanda.app.imovie.core.model.PlaysSet
+import cn.chitanda.app.imovie.ui.ext.zero
 import cn.chitanda.app.imovie.ui.navigation.LocalNavController
 import coil.compose.AsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
@@ -77,24 +94,28 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val fullScreen = playInfo?.fullScreen ?: false
     val systemBarController = rememberSystemUiController()
     val coroutineScope = rememberCoroutineScope()
+    val activity = LocalContext.current as Activity
+
     LaunchedEffect(key1 = fullScreen) {
         if (fullScreen) {
             hideSystemBar(systemBarController)
+            activity.requestedOrientation =
+                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         } else {
             showSystemBar(systemBarController)
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
         }
     }
 
-    val activity = LocalContext.current as Activity
     val navController = LocalNavController.current
     val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     DisposableEffect(key1 = owner) {
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (fullScreen) {
-                    viewModel.setFullScreen(false)
+                if (viewModel.handleOnBackPressed()) {
+                    viewModel.changeFullScreenState()
                     showSystemBar(systemBarController)
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
                 } else {
                     coroutineScope.launch {
                         viewModel.updateHistory()
@@ -108,91 +129,92 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
             callback.isEnabled = false
         }
     }
-
-    Surface {
-        when {
-            fullScreen -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    VideoView(
-                        modifier = Modifier.fillMaxSize(),
-                        viewModel = viewModel,
-                        playInfo = playInfo,
-                        fullscreen = true,
-                        windowInsetsPadding = WindowInsets.systemBars
-                    )
-                }
-            }
-
-            sizeClass == WindowWidthSizeClass.Expanded -> {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    VideoView(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .weight(2f),
-                        viewModel = viewModel,
-                        playInfo = playInfo,
-                        fullscreen = false,
-                        windowInsetsPadding = WindowInsets.systemBars
-                    )
-                    UiStateInfo(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .windowInsetsPadding(WindowInsets.systemBars)
-                            .padding(vertical = 16.dp),
-                        uiState = uiState,
-                        viewModel = viewModel
-                    )
-                }
-            }
-
-            else -> {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
-                    VideoView(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16 / 9f),
-                        viewModel = viewModel,
-                        playInfo = playInfo,
-                        fullscreen = false,
-                        windowInsetsPadding = WindowInsets.statusBars
-                    )
-                    UiStateInfo(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        uiState = uiState,
-                        viewModel = viewModel
-                    )
-                }
-            }
+    val isLandScape = sizeClass == WindowWidthSizeClass.Expanded
+    val screenState = rememberScreenState(fullScreen = fullScreen, landSpace = isLandScape)
+    val transition = updateTransition(targetState = screenState, label = "play_screen_animation")
+    val horizontalScreenBodyWeight by transition.animateFloat(label = "horizontal_screen_body_weight") { state ->
+        when (state) {
+            ScreenState.Horizontal -> 2f
+            else -> 0.0001f
         }
     }
+    val verticalScreenBodyWeight by transition.animateFloat(label = "vertical_screen_body_weight") { state ->
+        when (state) {
+            ScreenState.Vertical -> 3f
+            else -> 0.0001f
+        }
+    }
+    Scaffold(contentWindowInsets = WindowInsets.zero()) { padding ->
+        Column(modifier = Modifier.padding(padding)) {
+            Row(modifier = Modifier.weight(1f)) {
+                VideoView(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .weight(3f),
+                    windowInsetsPadding = when (screenState) {
+                        ScreenState.Vertical -> WindowInsets.statusBars
+                        ScreenState.Horizontal -> WindowInsets.statusBars
+                        else -> WindowInsets.zero()
+                    },
+                    playInfo = playInfo, viewModel = viewModel
+                )
+                transition.AnimatedVisibility(
+                    visible = { state ->
+                        state == ScreenState.Horizontal
+                    },
+                    modifier = Modifier.weight(horizontalScreenBodyWeight),
+                    enter = fadeIn() + slideInHorizontally(initialOffsetX = { it }),
+                    exit = fadeOut() + slideOutHorizontally { it }
+                ) {
+                    ScreenBody(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .windowInsetsPadding(WindowInsets.systemBars),
+                        uiState = uiState,
+                        viewModel = viewModel
+                    )
+                }
+            }
+            transition.AnimatedVisibility(visible = { state ->
+                state == ScreenState.Vertical
+            },
+                modifier = Modifier.weight(verticalScreenBodyWeight),
+                enter = fadeIn() + slideInVertically { it },
+                exit = fadeOut() + slideOutVertically { it }) {
+                ScreenBody(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(top = 24.dp)
+                        .windowInsetsPadding(WindowInsets.navigationBars),
+                    uiState = uiState,
+                    viewModel = viewModel
+                )
+            }
+
+        }
+    }
+
 }
 
 @Composable
-private fun UiStateInfo(
+private fun ScreenBody(
     modifier: Modifier = Modifier,
     uiState: PlayUiState,
     viewModel: PlayScreenViewModel,
 ) {
     val playInfo = uiState.playInfo
-    Surface(
-        modifier = modifier
-    ) {
+    Surface(modifier = modifier) {
         when (uiState) {
             is PlayUiState.Success -> {
                 MovieDetailBody(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
-                        .fillMaxSize(), playInfo = playInfo, onPlaysSetClick = {
+                        .fillMaxSize(),
+                    playInfo = playInfo,
+                    onPlaysSetClick = {
                         viewModel.play(it)
-                    }, movie = uiState.movie
+                    },
+                    movie = uiState.movie
                 )
             }
 
@@ -212,6 +234,9 @@ private fun UiStateInfo(
                 }
             }
         }
+        SideEffect {
+            Log.d(TAG, "ScreenBody: side effect")
+        }
     }
 }
 
@@ -225,56 +250,44 @@ fun VideoView(
     playInfo: PlayInfo?,
     viewModel: PlayScreenViewModel,
     modifier: Modifier = Modifier,
-    fullscreen: Boolean,
 ) {
-    val activity = LocalContext.current as Activity
     Box(
         modifier = Modifier
             .background(color = Color.Black)
             .windowInsetsPadding(windowInsetsPadding) then modifier
     ) {
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = {
-            PlayerView(it).apply {
-//                resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIXED_HEIGHT
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT
-                )
-                showController()
-                setFullscreenButtonClickListener {
-                    viewModel.setFullScreen(!fullscreen)
-                    if (!fullscreen) {
-                        activity.requestedOrientation =
-                            ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-                    } else {
-                        activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        AnimatedVisibility(visible = playInfo != null, enter = fadeIn(), exit = fadeOut()) {
+            AndroidView(modifier = Modifier.fillMaxSize(), factory = {
+                PlayerView(it).apply {
+                    layoutParams = FrameLayout.LayoutParams(
+                        FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+                    )
+                    showController()
+                    setFullscreenButtonClickListener { _ ->
+                        viewModel.changeFullScreenState()
                     }
                 }
+            }) {
+                it.player = playInfo?.mediaController
+                it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
             }
-        }) {
-            it.player = playInfo?.mediaController
-            it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
-        }
-        val lifecycleOwner = LocalLifecycleOwner.current
+            val lifecycleOwner = LocalLifecycleOwner.current
 
-        DisposableEffect(key1 = lifecycleOwner, key2 = playInfo) {
-            val observer = object : DefaultLifecycleObserver {
-                override fun onResume(owner: LifecycleOwner) {
-                    Log.d(TAG, "onResume: ${playInfo?.mediaController?.currentMediaItemIndex}")
-                    playInfo?.mediaController?.play()
-                    Log.d(TAG, "onResume: ${playInfo?.mediaController?.isPlaying}")
-                }
+            DisposableEffect(key1 = lifecycleOwner, key2 = playInfo) {
+                val observer = object : DefaultLifecycleObserver {
+                    override fun onResume(owner: LifecycleOwner) {
+                        playInfo?.mediaController?.play()
+                    }
 
-                override fun onPause(owner: LifecycleOwner) {
-                    playInfo?.mediaController?.pause()
-                    Log.d(TAG, "onPause: ${playInfo?.mediaController?.isPlaying}")
-                    Log.d(TAG, "onPause: ${playInfo?.mediaController?.currentMediaItemIndex}")
+                    override fun onPause(owner: LifecycleOwner) {
+                        playInfo?.mediaController?.pause()
+                    }
                 }
-            }
-            lifecycleOwner.lifecycle.addObserver(observer)
-            onDispose {
-                Log.d(TAG, "VideoView: onDispose")
-                lifecycleOwner.lifecycle.removeObserver(observer)
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    Log.d(TAG, "VideoView: onDispose")
+                    lifecycleOwner.lifecycle.removeObserver(observer)
+                }
             }
         }
     }

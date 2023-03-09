@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.items
 import cn.chitanda.app.imovie.core.model.HistoryResource
@@ -72,7 +73,8 @@ import cn.chitanda.app.imovie.core.common.R.string as StringRes
 
 @Composable
 fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
-    val history = historyViewModel.data.collectAsLazyPagingItems()
+    val uiState by historyViewModel.uiState.collectAsStateWithLifecycle()
+    val history = uiState.data.collectAsLazyPagingItems()
     val snackbarState = remember {
         SnackbarHostState()
     }
@@ -143,9 +145,16 @@ private fun HistoryItem(
             )
         },
         background = {
-            val color by animateColorAsState(targetValue = if (dismissState.targetValue == DismissValue.Default) Color.Transparent else MaterialTheme.colorScheme.error)
+            val color by animateColorAsState(
+                targetValue = if (dismissState.targetValue == DismissValue.Default) {
+                    Color.Transparent
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+                label = ""
+            )
             val scale by animateFloatAsState(
-                if (dismissState.targetValue == DismissValue.Default) 0.5f else 1f
+                if (dismissState.targetValue == DismissValue.Default) 0.5f else 1f, label = ""
             )
             Box(
                 modifier = Modifier

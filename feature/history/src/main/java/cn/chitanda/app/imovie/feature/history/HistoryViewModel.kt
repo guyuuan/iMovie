@@ -31,13 +31,16 @@ class HistoryViewModel @Inject constructor(
         config = PagingConfig(pageSize = 20), pagingSourceFactory = ::pagingSourceFactory
     )
 
-    val data = pager.flow.map { it.map { h -> h.asHistoryResource() } }
-        .cachedIn(viewModelScope)
     private val _uiState: MutableStateFlow<HistoryUiState> by lazy(mode = LazyThreadSafetyMode.NONE) {
-        MutableStateFlow(HistoryUiState(data))
+        MutableStateFlow(
+            HistoryUiState(
+                pager.flow.map { it.map { h -> h.asHistoryResource() } }
+                    .cachedIn(viewModelScope)
+            )
+        )
     }
 
-    private val uiState: StateFlow<HistoryUiState> get() = _uiState
+    val uiState: StateFlow<HistoryUiState> get() = _uiState
 
     private var searchQuery: String = ""
     private fun pagingSourceFactory() =

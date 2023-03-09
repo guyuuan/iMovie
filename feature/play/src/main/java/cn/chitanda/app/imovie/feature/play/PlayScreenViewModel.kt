@@ -215,7 +215,7 @@ class PlayScreenViewModel @Inject constructor(
     suspend fun updateHistory(): HistoryResource? = withContext(Dispatchers.IO) {
         if (!hasPlayed) return@withContext null
         val controller = _controller ?: return@withContext null
-        if (withContext(Dispatchers.Main){ controller.currentMediaItemIndex } < 0) return@withContext null
+        if (withContext(Dispatchers.Main) { controller.currentMediaItemIndex } < 0) return@withContext null
         var update = true
         var movieId: Long? = null
         val history = withContext(Dispatchers.Main) {
@@ -253,11 +253,17 @@ class PlayScreenViewModel @Inject constructor(
         if (movieId != null) historyRepository.findHistoryById(movieId!!) else null
     }
 
-    fun setFullScreen(fullScreen: Boolean) {
+    fun changeFullScreenState() {
         val state = playUiState.value
+        val fullScreen = state.playInfo?.fullScreen ?: false
         safeLaunch {
-            _playUiState.emit(state.update(state.playInfo?.update(fullScreen = fullScreen)))
+            _playUiState.emit(state.update(state.playInfo?.update(fullScreen = !fullScreen)))
         }
+    }
+
+    fun handleOnBackPressed(): Boolean {
+        val state = playUiState.value
+        return state.playInfo?.fullScreen ?: false
     }
 
     override fun onCleared() {
