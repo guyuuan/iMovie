@@ -22,7 +22,7 @@ import kotlin.reflect.KProperty1
  *@createTime: 2022/12/7 11:46
  *@description:
  **/
-suspend inline fun <T> MutableStateFlow<T>.setStat(reducer: T.() -> T) {
+suspend inline fun <T> MutableStateFlow<T>.setState(reducer: T.() -> T) {
     this.emit(this.value.reducer())
 }
 

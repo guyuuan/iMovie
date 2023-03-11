@@ -5,52 +5,41 @@ import androidx.compose.runtime.remember
 import androidx.media3.session.MediaController
 import cn.chitanda.app.imovie.core.model.HistoryResource
 import cn.chitanda.app.imovie.core.model.MovieDetail
+import cn.chitanda.app.imovie.ui.state.UiState
 
 /**
  *@author: Chen
  *@createTime: 2022/11/22 17:42
  *@description:
  **/
-sealed interface PlayUiState {
-    val playInfo: PlayInfo?
-    fun update(playInfo: PlayInfo?, history: HistoryResource? = null): PlayUiState
-    data class Success(
-        val movie: MovieDetail,
-        val history: HistoryResource? = null,
-        override val playInfo: PlayInfo = PlayInfo.Ideal(),
-    ) : PlayUiState {
-        override fun update(playInfo: PlayInfo?, history: HistoryResource?) =
-            if (playInfo == null) {
-                Failed(error = Error("update play info is null"))
-            } else {
-                copy(
-                    history = this.history ?: history,
-                    playInfo = playInfo,
-                )
-            }
-    }
 
-    data class Failed(val error: Throwable? = null, override val playInfo: PlayInfo? = null) :
-        PlayUiState {
-        override fun update(playInfo: PlayInfo?, history: HistoryResource?) =
-            copy(playInfo = playInfo)
-    }
-
-    data class Loading(override val playInfo: PlayInfo? = null) : PlayUiState {
-        override fun update(playInfo: PlayInfo?, history: HistoryResource?) =
-            if (playInfo == null) Failed(error = Error("update play info is null")) else copy(
-                playInfo = playInfo
-            )
-    }
-}
+data class PlayUiState(
+    val state: UiState,
+    val playInfo: PlayInfo?=null,
+    val movie: MovieDetail?=null,
+    val history: HistoryResource?=null
+)
 
 sealed class PlayInfo(
     open val mediaController: MediaController? = null, open val fullScreen: Boolean = false,
 ) {
+    override fun hashCode(): Int {
+        return mediaController.hashCode()+fullScreen.hashCode()
+    }
     abstract fun update(
         mediaController: MediaController? = this.mediaController,
         fullScreen: Boolean = this.fullScreen,
     ): PlayInfo
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is PlayInfo) return false
+
+        if (mediaController != other.mediaController) return false
+        if (fullScreen != other.fullScreen) return false
+
+        return true
+    }
 
     data class Ideal(
         override val mediaController: MediaController? = null,

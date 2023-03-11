@@ -52,7 +52,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -73,8 +72,10 @@ import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.model.MovieDetail
 import cn.chitanda.app.imovie.core.model.PlaysSet
+import cn.chitanda.app.imovie.ui.ext.collectPartAsState
 import cn.chitanda.app.imovie.ui.ext.zero
 import cn.chitanda.app.imovie.ui.navigation.LocalNavController
+import cn.chitanda.app.imovie.ui.state.UiState
 import coil.compose.AsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -88,8 +89,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
-    val uiState by viewModel.playUiState.collectAsState()
-    val playInfo = uiState.playInfo
+    val uiState by viewModel.playUiState.collectPartAsState(part = PlayUiState::state)
+    val playInfo by viewModel.playUiState.collectPartAsState(part = PlayUiState::playInfo)
+    val movie by viewModel.playUiState.collectPartAsState(part = PlayUiState::movie)
     val sizeClass = LocalWindowSizeClass.current.widthSizeClass
     val fullScreen = playInfo?.fullScreen ?: false
     val systemBarController = rememberSystemUiController()
@@ -109,6 +111,23 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
 
     val navController = LocalNavController.current
     val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = object : DefaultLifecycleObserver {
+            override fun onResume(owner: LifecycleOwner) {
+                playInfo?.mediaController?.play()
+            }
+
+            override fun onPause(owner: LifecycleOwner) {
+                playInfo?.mediaController?.pause()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
     DisposableEffect(key1 = owner) {
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -153,7 +172,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                         .weight(3f),
                     windowInsetsPadding = when (screenState) {
                         ScreenState.Vertical -> WindowInsets.statusBars
-                        ScreenState.Horizontal -> WindowInsets.statusBars
+                        ScreenState.Horizontal -> WindowInsets.systemBars
                         else -> WindowInsets.zero()
                     },
                     playInfo = playInfo, viewModel = viewModel
@@ -171,6 +190,8 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                             .fillMaxSize()
                             .windowInsetsPadding(WindowInsets.systemBars),
                         uiState = uiState,
+                        playInfo = playInfo,
+                        movie = movie,
                         viewModel = viewModel
                     )
                 }
@@ -187,6 +208,8 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                         .padding(top = 24.dp)
                         .windowInsetsPadding(WindowInsets.navigationBars),
                     uiState = uiState,
+                    playInfo = playInfo,
+                    movie = movie,
                     viewModel = viewModel
                 )
             }
@@ -199,13 +222,14 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
 @Composable
 private fun ScreenBody(
     modifier: Modifier = Modifier,
-    uiState: PlayUiState,
+    uiState: UiState,
+    playInfo: PlayInfo?,
+    movie: MovieDetail?,
     viewModel: PlayScreenViewModel,
 ) {
-    val playInfo = uiState.playInfo
     Surface(modifier = modifier) {
         when (uiState) {
-            is PlayUiState.Success -> {
+            is UiState.Success -> {
                 MovieDetailBody(
                     modifier = Modifier
                         .padding(horizontal = 16.dp)
@@ -214,11 +238,11 @@ private fun ScreenBody(
                     onPlaysSetClick = {
                         viewModel.play(it)
                     },
-                    movie = uiState.movie
+                    movie = movie!!
                 )
             }
 
-            is PlayUiState.Failed -> {
+            is UiState.Error -> {
                 Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
                     Text(
                         text = uiState.error.toString(),
@@ -228,14 +252,11 @@ private fun ScreenBody(
                 }
             }
 
-            is PlayUiState.Loading -> {
+            is UiState.Loading -> {
                 Box(modifier = Modifier.fillMaxSize(), Alignment.Center) {
                     CircularProgressIndicator()
                 }
             }
-        }
-        SideEffect {
-            Log.d(TAG, "ScreenBody: side effect")
         }
     }
 }
@@ -270,24 +291,6 @@ fun VideoView(
             }) {
                 it.player = playInfo?.mediaController
                 it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
-            }
-            val lifecycleOwner = LocalLifecycleOwner.current
-
-            DisposableEffect(key1 = lifecycleOwner, key2 = playInfo) {
-                val observer = object : DefaultLifecycleObserver {
-                    override fun onResume(owner: LifecycleOwner) {
-                        playInfo?.mediaController?.play()
-                    }
-
-                    override fun onPause(owner: LifecycleOwner) {
-                        playInfo?.mediaController?.pause()
-                    }
-                }
-                lifecycleOwner.lifecycle.addObserver(observer)
-                onDispose {
-                    Log.d(TAG, "VideoView: onDispose")
-                    lifecycleOwner.lifecycle.removeObserver(observer)
-                }
             }
         }
     }

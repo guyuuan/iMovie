@@ -17,6 +17,8 @@ import cn.chitanda.app.imovie.core.model.Movie
 import cn.chitanda.app.imovie.core.model.PlaysSet
 import cn.chitanda.app.imovie.core.model.asMovieDetail
 import cn.chitanda.app.imovie.feature.play.navigation.PlayArgs
+import cn.chitanda.app.imovie.ui.ext.setState
+import cn.chitanda.app.imovie.ui.state.UiState
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -50,9 +52,9 @@ class PlayScreenViewModel @Inject constructor(
         Log.d(TAG, "onIsPlayingChanged: $isPlaying")
         safeLaunch {
             val history = updateHistory()
-            _playUiState.emit(
-                uiState.update(
-                    history = history, playInfo = if (isPlaying) {
+            _playUiState.setState {
+                copy(
+                    playInfo = if (isPlaying) {
                         PlayInfo.Playing(
                             controller, fullScreen = uiState.playInfo?.fullScreen ?: false
                         )
@@ -60,9 +62,9 @@ class PlayScreenViewModel @Inject constructor(
                         PlayInfo.Pausing(
                             controller, fullScreen = uiState.playInfo?.fullScreen ?: false
                         )
-                    }
+                    }, history = history
                 )
-            )
+            }
         }
     }
 
@@ -72,53 +74,50 @@ class PlayScreenViewModel @Inject constructor(
         when (playbackState) {
             Player.STATE_IDLE -> {
                 safeLaunch {
-                    _playUiState.emit(
-                        uiState.update(
+                    _playUiState.setState {
+                        copy(
                             playInfo = PlayInfo.Ideal(
-                                controller,
-                                fullScreen = uiState.playInfo?.fullScreen ?: false
+                                controller, fullScreen = uiState.playInfo?.fullScreen ?: false
                             )
                         )
-                    )
+                    }
+
                 }
             }
 
             Player.STATE_BUFFERING -> {
                 safeLaunch {
-                    _playUiState.emit(
-                        uiState.update(
+                    _playUiState.setState {
+                        copy(
                             playInfo = PlayInfo.Buffering(
-                                controller,
-                                fullScreen = uiState.playInfo?.fullScreen ?: false
+                                controller, fullScreen = uiState.playInfo?.fullScreen ?: false
                             )
                         )
-                    )
+                    }
                 }
             }
 
             Player.STATE_READY -> {
                 safeLaunch {
-                    _playUiState.emit(
-                        uiState.update(
+                    _playUiState.setState {
+                        copy(
                             playInfo = PlayInfo.Ready(
-                                controller,
-                                fullScreen = uiState.playInfo?.fullScreen ?: false
+                                controller, fullScreen = uiState.playInfo?.fullScreen ?: false
                             )
                         )
-                    )
+                    }
                 }
             }
 
             Player.STATE_ENDED -> {
                 safeLaunch {
-                    _playUiState.emit(
-                        uiState.update(
+                    _playUiState.setState {
+                        copy(
                             playInfo = PlayInfo.Ending(
-                                controller,
-                                fullScreen = uiState.playInfo?.fullScreen ?: false
+                                controller, fullScreen = uiState.playInfo?.fullScreen ?: false
                             )
                         )
-                    )
+                    }
                 }
             }
 
@@ -143,21 +142,27 @@ class PlayScreenViewModel @Inject constructor(
                 withContext(Dispatchers.IO) {
                     val movie = it.asMovieDetail()
                     mediaItemTree.initialize(movie)
-                    PlayUiState.Success(movie, historyRepository.findHistoryById(movie.id))
+                    PlayUiState(
+                        state = UiState.Success,
+                        history = historyRepository.findHistoryById(movie.id),
+                        movie = movie,
+                    )
                 }
             }.catch {
                 it.printStackTrace()
-                _playUiState.emit(PlayUiState.Failed(it))
+                _playUiState.setState {
+                    copy(state = UiState.Error(it))
+                }
             }.collectLatest {
                 _playUiState.emit(it)
-                withContext(Dispatchers.Main) { setController((it as? PlayUiState.Success)?.movie?.id.toString()) }
+                withContext(Dispatchers.Main) { setController(it.movie?.id.toString()) }
             }
 
         }
     }
 
     private val _playUiState: MutableStateFlow<PlayUiState> =
-        MutableStateFlow(PlayUiState.Loading())
+        MutableStateFlow(PlayUiState(state = UiState.Loading))
     val playUiState: StateFlow<PlayUiState> get() = _playUiState
 
     private val uiState get() = _playUiState.value
@@ -165,8 +170,8 @@ class PlayScreenViewModel @Inject constructor(
         val controller = _controller ?: return
         controller.playWhenReady = playArgs.playFromHistory
         safeLaunch {
-            _playUiState.emit(
-                uiState.update(
+            _playUiState.setState {
+                copy(
                     playInfo = if (controller.isPlaying) {
                         PlayInfo.Playing(
                             controller, fullScreen = uiState.playInfo?.fullScreen ?: false
@@ -181,7 +186,7 @@ class PlayScreenViewModel @Inject constructor(
                         )
                     }
                 )
-            )
+            }
         }
         controller.addListener(this)
         val future = movieId?.let { controller.getChildren(it, 0, Int.MAX_VALUE, null) }
@@ -189,9 +194,10 @@ class PlayScreenViewModel @Inject constructor(
             val mediaList = future.get().value?.toList() ?: emptyList()
             controller.setMediaItems(mediaList, false)
             if (playArgs.playFromHistory) {
-                val uiState = uiState
-                if (uiState is PlayUiState.Success && uiState.history != null) {
-                    controller.seekTo(uiState.history.index, uiState.history.position)
+                val current = uiState
+                val state = current.state
+                if (state is UiState.Success && current.history != null) {
+                    controller.seekTo(current.history.index, current.history.position)
                 }
             }
             controller.prepare()
@@ -219,26 +225,28 @@ class PlayScreenViewModel @Inject constructor(
         var update = true
         var movieId: Long? = null
         val history = withContext(Dispatchers.Main) {
-            (uiState as? PlayUiState.Success)?.let {
-                movieId = it.movie.id
+            val current = uiState
+            (if (current.state == UiState.Success) uiState else null)?.let {
+                val movieDetail = it.movie ?: return@let null
+                movieId = movieDetail.id
                 it.history?.copy(
-                    movieId = it.movie.id,
-                    movieName = it.movie.name,
-                    moviePic = it.movie.pic,
+                    movieId = movieDetail.id,
+                    movieName = movieDetail.name,
+                    moviePic = movieDetail.pic,
                     updateTime = System.currentTimeMillis(),
                     duration = controller.contentDuration,
                     position = controller.currentPosition,
                     index = controller.currentMediaItemIndex,
-                    indexName = it.movie.playSets[controller.currentMediaItemIndex].name,
+                    indexName = movieDetail.playSets[controller.currentMediaItemIndex].name,
                 ) ?: (HistoryResource(
-                    movieId = it.movie.id,
-                    movieName = it.movie.name,
-                    moviePic = it.movie.pic,
+                    movieId = movieDetail.id,
+                    movieName = movieDetail.name,
+                    moviePic = movieDetail.pic,
                     updateTime = System.currentTimeMillis(),
                     duration = controller.contentDuration,
                     position = controller.currentPosition,
                     index = controller.currentMediaItemIndex,
-                    indexName = it.movie.playSets[controller.currentMediaItemIndex].name,
+                    indexName = movieDetail.playSets[controller.currentMediaItemIndex].name,
                 ).also { update = false })
             }
         }
@@ -257,7 +265,9 @@ class PlayScreenViewModel @Inject constructor(
         val state = playUiState.value
         val fullScreen = state.playInfo?.fullScreen ?: false
         safeLaunch {
-            _playUiState.emit(state.update(state.playInfo?.update(fullScreen = !fullScreen)))
+            _playUiState.setState {
+                copy(playInfo = playInfo?.update(fullScreen = !fullScreen))
+            }
         }
     }
 
