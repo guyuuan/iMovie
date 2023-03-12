@@ -1,10 +1,14 @@
 package cn.chitanda.app.imovie
 
 import android.annotation.SuppressLint
+import android.app.PictureInPictureParams
+import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
@@ -14,6 +18,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
+import cn.chitanda.app.imovie.core.MainViewModel
 import cn.chitanda.app.imovie.core.design.theme.IMovieTheme
 import cn.chitanda.app.imovie.feature.home.navigation.homeNavigationRoute
 import cn.chitanda.app.imovie.feature.home.navigation.homeScreen
@@ -21,6 +26,7 @@ import cn.chitanda.app.imovie.feature.play.navigation.navigateToPlay
 import cn.chitanda.app.imovie.feature.play.navigation.playScreen
 import cn.chitanda.app.imovie.media.AppMediaControllerImpl
 import cn.chitanda.app.imovie.ui.navigation.AppRouter
+import cn.chitanda.app.imovie.ui.navigation.LocalMainViewModel
 import cn.chitanda.app.imovie.ui.navigation.LocalNavigateToPlayScreen
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -29,6 +35,8 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var mediaController: AppMediaControllerImpl
+
+    private val viewModel by viewModels<MainViewModel>()
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
@@ -53,6 +61,7 @@ class MainActivity : AppCompatActivity() {
                     LocalNavigateToPlayScreen provides { id, bool ->
                         navController.navigateToPlay(id, bool)
                     },
+                    LocalMainViewModel provides viewModel,
                     startDestination = homeNavigationRoute
                 ) {
                     homeScreen()
@@ -60,6 +69,24 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (mediaController.controller?.isPlaying == true && packageManager.hasSystemFeature(
+                PackageManager.FEATURE_PICTURE_IN_PICTURE
+            )
+        ) {
+            enterPictureInPictureMode(PictureInPictureParams.Builder().build())
+        }
+    }
+
+    override fun onPictureInPictureModeChanged(
+        isInPictureInPictureMode: Boolean,
+        newConfig: Configuration,
+    ) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        viewModel.onPictureInPictureModeChanged(isInPictureInPictureMode)
     }
 
     override fun onStart() {

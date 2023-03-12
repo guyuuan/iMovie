@@ -4,9 +4,11 @@ package cn.chitanda.app.imovie.feature.play
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.PictureInPictureParams
 import android.content.pm.ActivityInfo
-import android.util.Log
+import android.graphics.Rect
 import android.widget.FrameLayout
+import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
@@ -51,7 +53,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -74,6 +76,7 @@ import cn.chitanda.app.imovie.core.model.MovieDetail
 import cn.chitanda.app.imovie.core.model.PlaysSet
 import cn.chitanda.app.imovie.ui.ext.collectPartAsState
 import cn.chitanda.app.imovie.ui.ext.zero
+import cn.chitanda.app.imovie.ui.navigation.LocalMainViewModel
 import cn.chitanda.app.imovie.ui.navigation.LocalNavController
 import cn.chitanda.app.imovie.ui.state.UiState
 import coil.compose.AsyncImage
@@ -96,8 +99,8 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val fullScreen = playInfo?.fullScreen ?: false
     val systemBarController = rememberSystemUiController()
     val coroutineScope = rememberCoroutineScope()
+    val isInPip by LocalMainViewModel.current.isInPictureInPictureMode.collectAsState()
     val activity = LocalContext.current as Activity
-
     LaunchedEffect(key1 = fullScreen) {
         if (fullScreen) {
             hideSystemBar(systemBarController)
@@ -115,11 +118,11 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
 
     DisposableEffect(key1 = lifecycleOwner) {
         val observer = object : DefaultLifecycleObserver {
-            override fun onResume(owner: LifecycleOwner) {
+            override fun onStart(owner: LifecycleOwner) {
                 playInfo?.mediaController?.play()
             }
 
-            override fun onPause(owner: LifecycleOwner) {
+            override fun onStop(owner: LifecycleOwner) {
                 playInfo?.mediaController?.pause()
             }
         }
@@ -149,7 +152,8 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
         }
     }
     val isLandScape = sizeClass == WindowWidthSizeClass.Expanded
-    val screenState = rememberScreenState(fullScreen = fullScreen, landSpace = isLandScape)
+    val screenState =
+        rememberScreenState(fullScreen = fullScreen, landSpace = isLandScape, isInPip = isInPip)
     val transition = updateTransition(targetState = screenState, label = "play_screen_animation")
     val horizontalScreenBodyWeight by transition.animateFloat(label = "horizontal_screen_body_weight") { state ->
         when (state) {
@@ -175,6 +179,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                         ScreenState.Horizontal -> WindowInsets.systemBars
                         else -> WindowInsets.zero()
                     },
+                    isInPip = isInPip,
                     playInfo = playInfo, viewModel = viewModel
                 )
                 transition.AnimatedVisibility(
@@ -271,30 +276,50 @@ fun VideoView(
     playInfo: PlayInfo?,
     viewModel: PlayScreenViewModel,
     modifier: Modifier = Modifier,
+    isInPip: Boolean,
 ) {
+    val activity = LocalContext.current as ComponentActivity
     Box(
         modifier = Modifier
             .background(color = Color.Black)
             .windowInsetsPadding(windowInsetsPadding) then modifier
     ) {
-        AnimatedVisibility(visible = playInfo != null, enter = fadeIn(), exit = fadeOut()) {
-            AndroidView(modifier = Modifier.fillMaxSize(), factory = {
-                PlayerView(it).apply {
-                    layoutParams = FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
-                    )
-                    showController()
-                    setFullscreenButtonClickListener { _ ->
-                        viewModel.changeFullScreenState()
+        AndroidView(modifier = Modifier.fillMaxSize(), factory = {
+            PlayerView(it).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                showController()
+                setFullscreenButtonClickListener { _ ->
+                    viewModel.changeFullScreenState()
+                }
+                addOnLayoutChangeListener {
+                        _, left, top, right, bottom,
+                        oldLeft, oldTop, oldRight, oldBottom,
+                    ->
+                    if (left != oldLeft || right != oldRight || top != oldTop
+                        || bottom != oldBottom
+                    ) {
+                        // The playerView's bounds changed, update the source hint rect to
+                        // reflect its new bounds.
+                        val sourceRectHint = Rect()
+                        getGlobalVisibleRect(sourceRectHint)
+                        activity.setPictureInPictureParams(
+                            PictureInPictureParams.Builder()
+                                .setSourceRectHint(sourceRectHint)
+                                .build()
+                        )
                     }
                 }
-            }) {
-                it.player = playInfo?.mediaController
-                it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
+            }
+        }) {
+            it.player = playInfo?.mediaController
+            it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
+            if (isInPip) {
+                it.hideController()
             }
         }
     }
-
 }
 
 private fun hideSystemBar(systemBarController: SystemUiController) {

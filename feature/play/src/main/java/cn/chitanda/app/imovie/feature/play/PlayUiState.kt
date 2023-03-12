@@ -15,17 +15,18 @@ import cn.chitanda.app.imovie.ui.state.UiState
 
 data class PlayUiState(
     val state: UiState,
-    val playInfo: PlayInfo?=null,
-    val movie: MovieDetail?=null,
-    val history: HistoryResource?=null
+    val playInfo: PlayInfo? = null,
+    val movie: MovieDetail? = null,
+    val history: HistoryResource? = null,
 )
 
 sealed class PlayInfo(
     open val mediaController: MediaController? = null, open val fullScreen: Boolean = false,
 ) {
     override fun hashCode(): Int {
-        return mediaController.hashCode()+fullScreen.hashCode()
+        return mediaController.hashCode() + fullScreen.hashCode()
     }
+
     abstract fun update(
         mediaController: MediaController? = this.mediaController,
         fullScreen: Boolean = this.fullScreen,
@@ -92,14 +93,16 @@ sealed class PlayInfo(
 }
 
 enum class ScreenState {
-    Vertical, Horizontal, FullScreen
+    Vertical, Horizontal, FullScreen, Pip
 }
 
 @Composable
-fun rememberScreenState(fullScreen: Boolean, landSpace: Boolean) = remember(fullScreen, landSpace) {
-    when {
-        fullScreen -> ScreenState.FullScreen
-        landSpace && !fullScreen -> ScreenState.Horizontal
-        else -> ScreenState.Vertical
+fun rememberScreenState(fullScreen: Boolean, landSpace: Boolean, isInPip: Boolean) =
+    remember(fullScreen, landSpace, isInPip) {
+        when {
+            isInPip -> ScreenState.Pip
+            fullScreen -> ScreenState.FullScreen
+            landSpace && !fullScreen -> ScreenState.Horizontal
+            else -> ScreenState.Vertical
+        }
     }
-}
