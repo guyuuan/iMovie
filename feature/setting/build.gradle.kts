@@ -6,3 +6,7 @@ plugins {
 android {
     namespace = "cn.chitanda.app.imovie.feature.setting"
 }
+
+dependencies {
+    implementation(project(":core:datastore"))
+}

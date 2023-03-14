@@ -1,6 +1,7 @@
 plugins{
     id("imovie.android.lib")
     id("imovie.android.lib.compose")
+    id("imovie.android.hilt")
 }
 
 android{
@@ -10,6 +11,7 @@ android{
 dependencies {
     implementation(project(":core:design"))
     implementation(project(":core:common"))
+    implementation(project(":core:datastore"))
 //    implementation(project(":core:model"))
 //    implementation(project(":core:domain"))
 

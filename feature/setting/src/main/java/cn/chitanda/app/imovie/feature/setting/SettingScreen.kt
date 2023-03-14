@@ -18,20 +18,25 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Update
@@ -42,6 +47,7 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
@@ -58,8 +64,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cn.chitanda.app.imovie.core.DownloadState
+import cn.chitanda.app.imovie.ui.ext.collectPartAsState
 import java.io.File
 import cn.chitanda.app.imovie.core.common.R.color as CommonColor
 import cn.chitanda.app.imovie.core.common.R.drawable as CommonDrawable
@@ -70,47 +76,108 @@ import cn.chitanda.app.imovie.core.common.R.string as CommonString
  * @createTime: 2023/2/21 17:45
  * @description:
  **/
+private const val TAG = "SettingScreen"
+
 @Composable
 fun SettingScreen(viewModel: SettingScreenViewModel = hiltViewModel()) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val uiState by viewModel.settingUiState.collectAsStateWithLifecycle()
-    Scaffold(modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection), topBar = {
-        LargeTopAppBar(title = {
-            Text("iMovie")
-        }, navigationIcon = {
-            IconButton(onClick = { /*TODO*/ }) {
-                Icon(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(
-                            color = colorResource(id = CommonColor.ic_launcher_background),
-                            shape = CircleShape
-                        ),
-                    painter = painterResource(id = CommonDrawable.ic_launcher_foreground),
-                    tint = colorResource(id = CommonColor.ic_launcher_foreground),
-                    contentDescription = null
-                )
-            }
-        }, scrollBehavior = scrollBehavior
-        )
-    }) { paddingValue ->
+    val appVersion by viewModel.settingUiState.collectPartAsState(part = SettingUiState::appVersion)
+    val settings by viewModel.settingUiState.collectPartAsState(part = SettingUiState::settings)
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            LargeTopAppBar(
+                title = {
+                    Text("iMovie")
+                },
+                navigationIcon = {
+                    IconButton(onClick = { /*TODO*/ }) {
+                        Icon(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .background(
+                                    color = colorResource(id = CommonColor.ic_launcher_background),
+                                    shape = CircleShape
+                                ),
+                            painter = painterResource(id = CommonDrawable.ic_launcher_foreground),
+                            tint = colorResource(id = CommonColor.ic_launcher_foreground),
+                            contentDescription = null
+                        )
+                    }
+                },
+                scrollBehavior = scrollBehavior
+            )
+        }) { paddingValue ->
         LazyColumn(
             modifier = Modifier
                 .padding(paddingValue)
                 .fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+            contentPadding = PaddingValues(vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item {
+            item(key = "version_header", contentType = "AppVersionItem") {
                 AppVersionItem(
                     Modifier
+                        .padding(horizontal = 16.dp)
                         .fillMaxWidth()
                         .height(IntrinsicSize.Min),
                     viewModel = viewModel,
-                    version = uiState.appVersion,
+                    version = appVersion,
                     contentPadding = PaddingValues(vertical = 18.dp, horizontal = 24.dp)
                 )
             }
+
+            item {
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
+            items(settings * 30, contentType = { it::class }) {
+                AppSettingItem(setting = it, modifier = Modifier.padding(horizontal = 16.dp))
+            }
         }
+    }
+}
+
+private operator fun <E> List<E>.times(i: Int): List<E> {
+    return List(size * i) {
+        this[it % size]
+    }
+}
+
+@Composable
+private fun AppSettingItem(setting: AppSetting, modifier: Modifier = Modifier) {
+    when (setting) {
+        is AppSetting.Switcher -> {
+            Box(modifier) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = setting.title)
+                    Switch(checked = setting.state, onCheckedChange = setting.onChange)
+                }
+            }
+
+        }
+
+        is AppSetting.NavigationItem -> {
+            Box(Modifier.clickable { } then modifier) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = setting.title)
+                    Icon(Icons.Default.ChevronRight, contentDescription = "")
+                }
+            }
+        }
+
     }
 }
 
@@ -139,7 +206,9 @@ private fun AppVersionItem(
                 )
             }) { icon ->
                 Icon(
-                    imageVector = icon, contentDescription = "", modifier = Modifier.size(32.dp),
+                    imageVector = icon,
+                    contentDescription = "",
+                    modifier = Modifier.size(32.dp),
                 )
             }
 
@@ -241,7 +310,8 @@ private fun installApk(context: Context, file: String) {
     val apk = File(file)
     if (apk.exists()) {
 
-        val uri = FileProvider.getUriForFile(context, "cn.chitanda.app.imovie.file_provider", apk)
+        val uri =
+            FileProvider.getUriForFile(context, "cn.chitanda.app.imovie.file_provider", apk)
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(uri, "application/vnd.android.package-archive")
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

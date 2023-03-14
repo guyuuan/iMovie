@@ -16,4 +16,6 @@
     <string name="setting_downloading_finish">下载完成</string>
     <string name="setting_is_downloading">正在下载%s</string>
     <string name="setting_downloading_failed">下载失败</string>
+    <string name="app_setting_pip">自动进入小窗模式</string>
+    <string name="app_setting_about">关于</string>
 </resources>

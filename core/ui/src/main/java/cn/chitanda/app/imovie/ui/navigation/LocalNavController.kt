@@ -3,7 +3,7 @@ package cn.chitanda.app.imovie.ui.navigation
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavController
-import cn.chitanda.app.imovie.core.MainViewModel
+import cn.chitanda.app.imovie.ui.viewmodel.MainViewModel
 
 /**
  * @author: Chen

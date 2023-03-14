@@ -18,7 +18,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
-import cn.chitanda.app.imovie.core.MainViewModel
 import cn.chitanda.app.imovie.core.design.theme.IMovieTheme
 import cn.chitanda.app.imovie.feature.home.navigation.homeNavigationRoute
 import cn.chitanda.app.imovie.feature.home.navigation.homeScreen
@@ -28,6 +27,7 @@ import cn.chitanda.app.imovie.media.AppMediaControllerImpl
 import cn.chitanda.app.imovie.ui.navigation.AppRouter
 import cn.chitanda.app.imovie.ui.navigation.LocalMainViewModel
 import cn.chitanda.app.imovie.ui.navigation.LocalNavigateToPlayScreen
+import cn.chitanda.app.imovie.ui.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -73,12 +73,15 @@ class MainActivity : AppCompatActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if (mediaController.controller?.isPlaying == true && packageManager.hasSystemFeature(
-                PackageManager.FEATURE_PICTURE_IN_PICTURE
-            )
-        ) {
+        if (checkEnablePip()) {
             enterPictureInPictureMode(PictureInPictureParams.Builder().build())
         }
+    }
+
+    private fun checkEnablePip(): Boolean {
+        return mediaController.controller?.isPlaying == true && packageManager.hasSystemFeature(
+            PackageManager.FEATURE_PICTURE_IN_PICTURE
+        ) && viewModel.checkEnablePip()
     }
 
     override fun onPictureInPictureModeChanged(
