@@ -36,7 +36,7 @@ class SettingScreenViewModel @Inject constructor(
     private val _settingUiState: MutableStateFlow<SettingUiState> =
         MutableStateFlow(
             SettingUiState(
-                settings = AppSetting.getDefaultList(context = context, aboutPagePath = "") {
+                settings = AppSetting.getDefaultList(context = context,) {
                     safeLaunch {
                         appPreferences.setUsePip(it)
                     }

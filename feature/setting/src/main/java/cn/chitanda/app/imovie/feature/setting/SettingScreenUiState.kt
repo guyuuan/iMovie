@@ -3,6 +3,7 @@ package cn.chitanda.app.imovie.feature.setting
 import android.content.Context
 import cn.chitanda.app.imovie.core.DownloadState
 import cn.chitanda.app.imovie.core.model.GithubRelease
+import cn.chitanda.app.imovie.feature.setting.navigation.aboutNavigationRoute
 import cn.chitanda.app.imovie.ui.state.UiState
 import cn.chitanda.app.imovie.core.common.R.string as RString
 
@@ -52,12 +53,12 @@ sealed interface AppSetting {
     data class NavigationItem(
         override val title: String,
         override val name: String,
-        val path: String,
+        val route: String,
         override val subTitle: String? = null
     ) : AppSetting
 
     companion object {
-        fun getDefaultList(context: Context, aboutPagePath:String, onPipModeChange:(Boolean)->Unit): List<AppSetting> {
+        fun getDefaultList(context: Context,  onPipModeChange:(Boolean)->Unit): List<AppSetting> {
             return listOf(
                 Switcher(
                     name = "pip",
@@ -68,7 +69,7 @@ sealed interface AppSetting {
                 NavigationItem(
                     name = "about",
                     title = context.getString(RString.app_setting_about),
-                    path = aboutPagePath
+                    route = aboutNavigationRoute
                 ),
             )
         }

@@ -1,6 +1,6 @@
 @file:OptIn(
     ExperimentalMaterial3Api::class,
-    ExperimentalAnimationApi::class,
+    ExperimentalAnimationApi::class, ExperimentalFoundationApi::class,
 )
 
 package cn.chitanda.app.imovie.feature.setting
@@ -17,10 +17,9 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,7 +35,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Update
@@ -65,7 +63,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import cn.chitanda.app.imovie.core.DownloadState
+import cn.chitanda.app.imovie.ui.ext.ListItem
 import cn.chitanda.app.imovie.ui.ext.collectPartAsState
+import cn.chitanda.app.imovie.ui.navigation.LocalNavController
 import java.io.File
 import cn.chitanda.app.imovie.core.common.R.color as CommonColor
 import cn.chitanda.app.imovie.core.common.R.drawable as CommonDrawable
@@ -131,51 +131,28 @@ fun SettingScreen(viewModel: SettingScreenViewModel = hiltViewModel()) {
                 Spacer(modifier = Modifier.height(20.dp))
             }
 
-            items(settings * 30, contentType = { it::class }) {
-                AppSettingItem(setting = it, modifier = Modifier.padding(horizontal = 16.dp))
+            items(settings, contentType = { it::class }) {
+                AppSettingItem(setting = it, modifier = Modifier.fillMaxWidth())
             }
         }
-    }
-}
-
-private operator fun <E> List<E>.times(i: Int): List<E> {
-    return List(size * i) {
-        this[it % size]
     }
 }
 
 @Composable
-private fun AppSettingItem(setting: AppSetting, modifier: Modifier = Modifier) {
+private fun AppSettingItem(modifier: Modifier = Modifier, setting: AppSetting) {
     when (setting) {
         is AppSetting.Switcher -> {
-            Box(modifier) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = setting.title)
-                    Switch(checked = setting.state, onCheckedChange = setting.onChange)
-                }
-            }
+            ListItem(modifier = modifier, title = setting.title, onClick = {}, suffix = {
+                Switch(checked = setting.state, onCheckedChange = setting.onChange)
+            })
 
         }
 
         is AppSetting.NavigationItem -> {
-            Box(Modifier.clickable { } then modifier) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = setting.title)
-                    Icon(Icons.Default.ChevronRight, contentDescription = "")
-                }
-            }
+            val navController = LocalNavController.current
+            ListItem(modifier = modifier, title = setting.title, onClick = {
+                navController.navigate(setting.route)
+            })
         }
 
     }

@@ -23,6 +23,8 @@ import cn.chitanda.app.imovie.feature.home.navigation.homeNavigationRoute
 import cn.chitanda.app.imovie.feature.home.navigation.homeScreen
 import cn.chitanda.app.imovie.feature.play.navigation.navigateToPlay
 import cn.chitanda.app.imovie.feature.play.navigation.playScreen
+import cn.chitanda.app.imovie.feature.setting.navigation.aboutScreen
+import cn.chitanda.app.imovie.feature.setting.navigation.licenseScreen
 import cn.chitanda.app.imovie.media.AppMediaControllerImpl
 import cn.chitanda.app.imovie.ui.navigation.AppRouter
 import cn.chitanda.app.imovie.ui.navigation.LocalMainViewModel
@@ -66,6 +68,8 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     homeScreen()
                     playScreen()
+                    aboutScreen()
+                    licenseScreen()
                 }
             }
         }

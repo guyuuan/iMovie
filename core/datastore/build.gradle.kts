@@ -12,24 +12,9 @@ plugins {
 }
 
 android {
-    defaultConfig {
-        consumerProguardFiles("consumer-proguard-rules.pro")
-    }
     namespace = "cn.chitanda.app.imovie.core.datastore"
-
-//    sourceSets {
-//        val main by getting
-//        main.java{
-//            srcDir("build/generated/source/proto/main/java")
-//        }
-//        main.kotlin{
-//            srcDir("build/generated/source/proto/main/kotlin")
-//        }
-//        main.proto{
-//            srcDir("src/main/proto")
-//        }
-//    }
 }
+
 protobuf {
     protoc {
         artifact = libs.protobuf.protoc.get().toString()

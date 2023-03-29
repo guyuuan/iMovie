@@ -18,4 +18,5 @@
     <string name="setting_downloading_failed">下载失败</string>
     <string name="app_setting_pip">自动进入小窗模式</string>
     <string name="app_setting_about">关于</string>
+    <string name="open_source_license">开放源码许可</string>
 </resources>
