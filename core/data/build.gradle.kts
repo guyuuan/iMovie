@@ -1,6 +1,6 @@
 plugins {
-    id("imovie.android.lib")
-    id("imovie.android.hilt")
+    id("chitanda.android.lib")
+    id("chitanda.android.hilt")
     id("kotlinx-serialization")
 }
 android {

@@ -7,8 +7,8 @@ import com.google.protobuf.gradle.*
 @Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.protobuf)
-    id("imovie.android.lib")
-    id("imovie.android.hilt")
+    id("chitanda.android.lib")
+    id("chitanda.android.hilt")
 }
 
 android {

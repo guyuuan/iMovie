@@ -1,7 +1,7 @@
 plugins{
-    id("imovie.android.lib")
-    id("imovie.android.lib.compose")
-    id("imovie.android.hilt")
+    id("chitanda.android.lib")
+    id("chitanda.android.lib.compose")
+    id("chitanda.android.hilt")
 }
 
 android{

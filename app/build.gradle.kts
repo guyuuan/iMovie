@@ -1,9 +1,9 @@
 @file:Suppress("UnstableApiUsage")
 
 plugins {
-    id("imovie.android.app")
-    id("imovie.android.app.compose")
-    id("imovie.android.hilt")
+    id("chitanda.android.app")
+    id("chitanda.android.app.compose")
+    id("chitanda.android.hilt")
     id("kotlinx-serialization")
 }
 

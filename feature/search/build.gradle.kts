@@ -1,6 +1,6 @@
 plugins {
-    id("imovie.android.feature")
-    id("imovie.android.lib.compose")
+    id("chitanda.android.feature")
+    id("chitanda.android.lib.compose")
     id("org.jetbrains.kotlin.android")
 }
 android {
