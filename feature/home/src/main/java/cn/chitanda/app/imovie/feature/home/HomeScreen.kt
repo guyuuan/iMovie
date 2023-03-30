@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import cn.chitanda.app.imovie.feature.setting.navigation.settingNavigationRoute
+import cn.chitanda.app.imovie.feature.recently.navigation.recentlyUpdateNavigationRoute
 
 /**
  * @author: Chen
@@ -41,8 +41,8 @@ fun HomeScreen() {
         NavHost(
             modifier = Modifier.padding(it),
             navController = homeNavController,
-//            startDestination = recentlyUpdateNavigationRoute
-            startDestination = settingNavigationRoute
+            startDestination = recentlyUpdateNavigationRoute
+//            startDestination = settingNavigationRoute
         ) {
             homeScreenState.topLevelDestinations.forEach { destination ->
                 destination.navRegistry(this)

@@ -2,11 +2,11 @@
 
 package cn.chitanda.app.imovie.feature.play
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.pm.ActivityInfo
 import android.graphics.Rect
+import android.view.View
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -43,8 +43,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.IconButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -55,7 +59,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -104,8 +111,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     LaunchedEffect(key1 = fullScreen) {
         if (fullScreen) {
             hideSystemBar(systemBarController)
-            activity.requestedOrientation =
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         } else {
             showSystemBar(systemBarController)
             activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
@@ -180,16 +186,15 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                         else -> WindowInsets.zero()
                     },
                     isInPip = isInPip,
-                    playInfo = playInfo, viewModel = viewModel
+                    playInfo = playInfo,
+                    viewModel = viewModel
                 )
-                transition.AnimatedVisibility(
-                    visible = { state ->
-                        state == ScreenState.Horizontal
-                    },
+                transition.AnimatedVisibility(visible = { state ->
+                    state == ScreenState.Horizontal
+                },
                     modifier = Modifier.weight(horizontalScreenBodyWeight),
                     enter = fadeIn() + slideInHorizontally(initialOffsetX = { it }),
-                    exit = fadeOut() + slideOutHorizontally { it }
-                ) {
+                    exit = fadeOut() + slideOutHorizontally { it }) {
                     ScreenBody(
                         modifier = Modifier
                             .fillMaxSize()
@@ -268,9 +273,7 @@ private fun ScreenBody(
 
 private const val TAG = "PlayScreen"
 
-@SuppressLint("SourceLockedOrientationActivity")
 @Composable
-@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 fun VideoView(
     windowInsetsPadding: WindowInsets,
     playInfo: PlayInfo?,
@@ -278,46 +281,83 @@ fun VideoView(
     modifier: Modifier = Modifier,
     isInPip: Boolean,
 ) {
-    val activity = LocalContext.current as ComponentActivity
+    var showAppBar by rememberSaveable { mutableStateOf(true) }
     Box(
         modifier = Modifier
             .background(color = Color.Black)
             .windowInsetsPadding(windowInsetsPadding) then modifier
     ) {
-        AndroidView(modifier = Modifier.fillMaxSize(), factory = {
-            PlayerView(it).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+        AndroidVideoView(
+            modifier = Modifier.fillMaxSize(),
+            playInfo,
+            viewModel,
+            isInPip,
+        ) {
+            showAppBar = it
+        }
+        AnimatedVisibility(
+            visible = showAppBar && playInfo?.fullScreen == false && !isInPip,
+            enter = slideInHorizontally { -it } + fadeIn(),
+            exit = slideOutHorizontally { -it } + fadeOut()
+        ) {
+            val navController = LocalNavController.current
+            IconButton(onClick = { navController.navigateUp() }) {
+                Icon(
+                    Icons.Default.ArrowBack,
+                    tint = Color.White,
+                    contentDescription = "navigate up"
                 )
-                showController()
-                setFullscreenButtonClickListener { _ ->
-                    viewModel.changeFullScreenState()
-                }
-                addOnLayoutChangeListener {
-                        _, left, top, right, bottom,
-                        oldLeft, oldTop, oldRight, oldBottom,
-                    ->
-                    if (left != oldLeft || right != oldRight || top != oldTop
-                        || bottom != oldBottom
-                    ) {
-                        // The playerView's bounds changed, update the source hint rect to
-                        // reflect its new bounds.
-                        val sourceRectHint = Rect()
-                        getGlobalVisibleRect(sourceRectHint)
-                        activity.setPictureInPictureParams(
-                            PictureInPictureParams.Builder()
-                                .setSourceRectHint(sourceRectHint)
-                                .build()
-                        )
-                    }
+            }
+        }
+    }
+}
+
+@Composable
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+fun AndroidVideoView(
+    modifier: Modifier = Modifier,
+    playInfo: PlayInfo?,
+    viewModel: PlayScreenViewModel,
+    isInPip: Boolean,
+    onControllerVisibilityChange: (Boolean) -> Unit
+) {
+    val activity = LocalContext.current as ComponentActivity
+
+    AndroidView(modifier = modifier, factory = {
+        PlayerView(it).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            setControllerVisibilityListener(PlayerView.ControllerVisibilityListener { visibility ->
+                onControllerVisibilityChange(
+                    visibility == View.VISIBLE
+                )
+            })
+            showController()
+            setFullscreenButtonClickListener { _ ->
+                viewModel.changeFullScreenState()
+            }
+            addOnLayoutChangeListener {
+                    _, left, top, right, bottom,
+                    oldLeft, oldTop, oldRight, oldBottom,
+                ->
+                if (left != oldLeft || right != oldRight || top != oldTop || bottom != oldBottom) {
+                    // The playerView's bounds changed, update the source hint rect to
+                    // reflect its new bounds.
+                    val sourceRectHint = Rect()
+                    getGlobalVisibleRect(sourceRectHint)
+                    activity.setPictureInPictureParams(
+                        PictureInPictureParams.Builder().setSourceRectHint(sourceRectHint)
+                            .build()
+                    )
                 }
             }
-        }) {
-            it.player = playInfo?.mediaController
-            it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
-            if (isInPip) {
-                it.hideController()
-            }
+        }
+    }) {
+        it.player = playInfo?.mediaController
+        it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
+        if (isInPip) {
+            it.hideController()
         }
     }
 }
