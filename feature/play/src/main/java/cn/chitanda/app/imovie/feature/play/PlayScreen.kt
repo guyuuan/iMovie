@@ -6,6 +6,7 @@ import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.pm.ActivityInfo
 import android.graphics.Rect
+import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
@@ -160,6 +161,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val isLandScape = sizeClass == WindowWidthSizeClass.Expanded
     val screenState =
         rememberScreenState(fullScreen = fullScreen, landSpace = isLandScape, isInPip = isInPip)
+    Log.d(TAG, "PlayScreen: $isInPip")
     val transition = updateTransition(targetState = screenState, label = "play_screen_animation")
     val horizontalScreenBodyWeight by transition.animateFloat(label = "horizontal_screen_body_weight") { state ->
         when (state) {
@@ -285,7 +287,8 @@ fun VideoView(
     Box(
         modifier = Modifier
             .background(color = Color.Black)
-            .windowInsetsPadding(windowInsetsPadding) then modifier
+                then modifier
+                then Modifier.windowInsetsPadding(windowInsetsPadding)
     ) {
         AndroidVideoView(
             modifier = Modifier.fillMaxSize(),

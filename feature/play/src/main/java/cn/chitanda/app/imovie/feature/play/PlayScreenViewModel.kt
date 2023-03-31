@@ -196,7 +196,7 @@ class PlayScreenViewModel @Inject constructor(
             if (playArgs.playFromHistory) {
                 val current = uiState
                 val state = current.state
-                if (state is UiState.Success && current.history != null) {
+                if (state is UiState.Success && current.history != null && current.history.index >= 0) {
                     controller.seekTo(current.history.index, current.history.position)
                 }
             }
