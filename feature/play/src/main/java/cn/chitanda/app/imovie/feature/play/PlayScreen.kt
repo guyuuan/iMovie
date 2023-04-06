@@ -6,8 +6,8 @@ import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.pm.ActivityInfo
 import android.graphics.Rect
-import android.util.Log
 import android.view.View
+import android.view.WindowManager
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -59,8 +59,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -78,6 +80,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import androidx.media3.session.MediaController
 import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.model.MovieDetail
@@ -104,64 +107,22 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val playInfo by viewModel.playUiState.collectPartAsState(part = PlayUiState::playInfo)
     val movie by viewModel.playUiState.collectPartAsState(part = PlayUiState::movie)
     val sizeClass = LocalWindowSizeClass.current.widthSizeClass
-    val fullScreen = playInfo?.fullScreen ?: false
+    val fullScreen by remember(playInfo) {
+        derivedStateOf {
+            playInfo?.fullScreen ?: false
+        }
+    }
     val systemBarController = rememberSystemUiController()
     val coroutineScope = rememberCoroutineScope()
     val isInPip by LocalMainViewModel.current.isInPictureInPictureMode.collectAsState()
     val activity = LocalContext.current as Activity
-    LaunchedEffect(key1 = fullScreen) {
-        if (fullScreen) {
-            hideSystemBar(systemBarController)
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        } else {
-            showSystemBar(systemBarController)
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-        }
-    }
 
     val navController = LocalNavController.current
     val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val lifecycleOwner = LocalLifecycleOwner.current
-
-    DisposableEffect(key1 = lifecycleOwner) {
-        val observer = object : DefaultLifecycleObserver {
-            override fun onStart(owner: LifecycleOwner) {
-                playInfo?.mediaController?.play()
-            }
-
-            override fun onStop(owner: LifecycleOwner) {
-                playInfo?.mediaController?.pause()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
-    DisposableEffect(key1 = owner) {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (viewModel.handleOnBackPressed()) {
-                    viewModel.changeFullScreenState()
-                    showSystemBar(systemBarController)
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
-                } else {
-                    coroutineScope.launch {
-                        viewModel.updateHistory()
-                        navController.navigateUp()
-                    }
-                }
-            }
-        }
-        owner?.addCallback(callback)
-        onDispose {
-            callback.isEnabled = false
-        }
-    }
     val isLandScape = sizeClass == WindowWidthSizeClass.Expanded
     val screenState =
         rememberScreenState(fullScreen = fullScreen, landSpace = isLandScape, isInPip = isInPip)
-    Log.d(TAG, "PlayScreen: $isInPip")
     val transition = updateTransition(targetState = screenState, label = "play_screen_animation")
     val horizontalScreenBodyWeight by transition.animateFloat(label = "horizontal_screen_body_weight") { state ->
         when (state) {
@@ -175,6 +136,12 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
             else -> 0.0001f
         }
     }
+    val mediaController: MediaController? by remember(playInfo) {
+        derivedStateOf {
+            playInfo?.mediaController
+        }
+    }
+
     Scaffold(contentWindowInsets = WindowInsets.zero()) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             Row(modifier = Modifier.weight(1f)) {
@@ -188,8 +155,9 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                         else -> WindowInsets.zero()
                     },
                     isInPip = isInPip,
-                    playInfo = playInfo,
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    mediaController = mediaController,
+                    fullScreen = fullScreen,
                 )
                 transition.AnimatedVisibility(visible = { state ->
                     state == ScreenState.Horizontal
@@ -229,6 +197,63 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
         }
     }
 
+    LaunchedEffect(key1 = playInfo) {
+        if (playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering) {
+            activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        } else {
+            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
+    LaunchedEffect(key1 = fullScreen) {
+        if (fullScreen) {
+            hideSystemBar(systemBarController)
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        } else {
+            showSystemBar(systemBarController)
+            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+        }
+    }
+
+    DisposableEffect(key1 = lifecycleOwner) {
+        val observer = object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                if (playInfo is PlayInfo.Pausing) {
+                    playInfo?.mediaController?.play()
+                }
+            }
+
+            override fun onStop(owner: LifecycleOwner) {
+                if (playInfo is PlayInfo.Playing) {
+                    playInfo?.mediaController?.pause()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+    DisposableEffect(key1 = owner) {
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (viewModel.handleOnBackPressed()) {
+                    viewModel.changeFullScreenState()
+                    showSystemBar(systemBarController)
+                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                } else {
+                    coroutineScope.launch {
+                        viewModel.updateHistory()
+                        navController.navigateUp()
+                    }
+                }
+            }
+        }
+        owner?.addCallback(callback)
+        onDispose {
+            callback.isEnabled = false
+        }
+    }
 }
 
 @Composable
@@ -278,10 +303,11 @@ private const val TAG = "PlayScreen"
 @Composable
 fun VideoView(
     windowInsetsPadding: WindowInsets,
-    playInfo: PlayInfo?,
     viewModel: PlayScreenViewModel,
     modifier: Modifier = Modifier,
     isInPip: Boolean,
+    fullScreen: Boolean,
+    mediaController: MediaController?
 ) {
     var showAppBar by rememberSaveable { mutableStateOf(true) }
     Box(
@@ -292,14 +318,14 @@ fun VideoView(
     ) {
         AndroidVideoView(
             modifier = Modifier.fillMaxSize(),
-            playInfo,
-            viewModel,
-            isInPip,
+            viewModel = viewModel,
+            isInPip = isInPip,
+            mediaController = mediaController
         ) {
             showAppBar = it
         }
         AnimatedVisibility(
-            visible = showAppBar && playInfo?.fullScreen == false && !isInPip,
+            visible = showAppBar && !fullScreen && !isInPip,
             enter = slideInHorizontally { -it } + fadeIn(),
             exit = slideOutHorizontally { -it } + fadeOut()
         ) {
@@ -319,13 +345,12 @@ fun VideoView(
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 fun AndroidVideoView(
     modifier: Modifier = Modifier,
-    playInfo: PlayInfo?,
     viewModel: PlayScreenViewModel,
     isInPip: Boolean,
+    mediaController: MediaController?,
     onControllerVisibilityChange: (Boolean) -> Unit
 ) {
     val activity = LocalContext.current as ComponentActivity
-
     AndroidView(modifier = modifier, factory = {
         PlayerView(it).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -357,8 +382,7 @@ fun AndroidVideoView(
             }
         }
     }) {
-        it.player = playInfo?.mediaController
-        it.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
+        it.player = mediaController
         if (isInPip) {
             it.hideController()
         }
