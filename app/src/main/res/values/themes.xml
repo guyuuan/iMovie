@@ -9,6 +9,6 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:enforceNavigationBarContrast" tools:targetApi="q">true</item>
         <item name="android:enforceStatusBarContrast" tools:targetApi="q">true</item>
-<!--        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="R">always</item>-->
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="R">always</item>
     </style>
 </resources>

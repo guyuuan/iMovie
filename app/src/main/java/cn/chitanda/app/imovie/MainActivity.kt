@@ -1,12 +1,9 @@
 package cn.chitanda.app.imovie
 
-import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -40,14 +37,9 @@ class MainActivity : AppCompatActivity() {
 
     private val viewModel by viewModels<MainViewModel>()
 
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.addFlags(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS)
-        }
         super.onCreate(savedInstanceState)
         setContent {
             val focusManager = LocalFocusManager.current
@@ -73,6 +65,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        mediaController.setActivity(this)
     }
 
     override fun onUserLeaveHint() {
@@ -96,13 +89,8 @@ class MainActivity : AppCompatActivity() {
         viewModel.onPictureInPictureModeChanged(isInPictureInPictureMode)
     }
 
-    override fun onStart() {
-        super.onStart()
-        mediaController.setActivity(this)
-    }
-
-    override fun onStop() {
+    override fun onDestroy() {
         mediaController.release()
-        super.onStop()
+        super.onDestroy()
     }
 }
