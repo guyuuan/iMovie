@@ -29,18 +29,24 @@ class AppVersionRepositoryImp @Inject constructor(private val dataSource: AppNet
     override suspend fun checkAppNeedUpdate(currentVersion: String): GithubRelease? {
         val release = getAppLatestVersion()
         val remoteVersion = release.tagName.replaceFirst("v", "")
-        return if (currentVersion.asVersionCode() < remoteVersion.asVersionCode()) {
+        return if (currentVersion.checkVersion(remoteVersion)) {
             release
         } else {
             null
         }
     }
 
-    private fun String.asVersionCode() =
-      try {
-          replace(".", "").toLong()
-      }catch (e:NumberFormatException){
-          0L
-      }
+
+    //check version
+    private fun String.checkVersion(other: String): Boolean {
+        val thisVersion = this.split(".")
+        val otherVersion = other.split(".")
+        for (i in thisVersion.indices) {
+            if ((thisVersion[i].toIntOrNull() ?: 0) > (otherVersion[i].toIntOrNull() ?: 0)) {
+                return false
+            }
+        }
+        return true
+    }
 
 }
