@@ -42,7 +42,7 @@ class AppVersionRepositoryImp @Inject constructor(private val dataSource: AppNet
         val thisVersion = this.split(".")
         val otherVersion = other.split(".")
         for (i in thisVersion.indices) {
-            if ((thisVersion[i].toIntOrNull() ?: 0) > (otherVersion[i].toIntOrNull() ?: 0)) {
+            if ((thisVersion[i].toIntOrNull() ?: 0) >= (otherVersion[i].toIntOrNull() ?: 0)) {
                 return false
             }
         }
