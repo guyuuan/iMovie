@@ -2,14 +2,11 @@
 
 package cn.chitanda.app.imovie.feature.play
 
-import android.app.Activity
 import android.app.PictureInPictureParams
 import android.content.pm.ActivityInfo
 import android.graphics.Rect
 import android.view.View
-import android.view.WindowManager
 import android.widget.FrameLayout
-import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.animation.AnimatedVisibility
@@ -71,8 +68,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -90,6 +87,7 @@ import cn.chitanda.app.imovie.ui.ext.zero
 import cn.chitanda.app.imovie.ui.navigation.LocalMainViewModel
 import cn.chitanda.app.imovie.ui.navigation.LocalNavController
 import cn.chitanda.app.imovie.ui.state.UiState
+import cn.chitanda.app.imovie.ui.util.findActivity
 import coil.compose.AsyncImage
 import com.google.accompanist.systemuicontroller.SystemUiController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
@@ -115,7 +113,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val systemBarController = rememberSystemUiController()
     val coroutineScope = rememberCoroutineScope()
     val isInPip by LocalMainViewModel.current.isInPictureInPictureMode.collectAsState()
-    val activity = LocalContext.current as Activity
+    val activity = findActivity()
 
     val navController = LocalNavController.current
     val owner = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -141,6 +139,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
             playInfo?.mediaController
         }
     }
+    val view = LocalView.current
 
     Scaffold(contentWindowInsets = WindowInsets.zero()) { padding ->
         Column(modifier = Modifier.padding(padding)) {
@@ -197,21 +196,20 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
         }
     }
 
-    LaunchedEffect(key1 = playInfo) {
-        if (playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering) {
-            activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        } else {
-            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+    DisposableEffect(key1 = playInfo, key2 = view) {
+        view.keepScreenOn = playInfo is PlayInfo.Playing || playInfo is PlayInfo.Buffering
+        onDispose {
+            view.keepScreenOn = false
         }
     }
 
     LaunchedEffect(key1 = fullScreen) {
         if (fullScreen) {
             hideSystemBar(systemBarController)
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         } else {
             showSystemBar(systemBarController)
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
 
@@ -240,7 +238,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                 if (viewModel.handleOnBackPressed()) {
                     viewModel.changeFullScreenState()
                     showSystemBar(systemBarController)
-                    activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                    activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR
                 } else {
                     coroutineScope.launch {
                         viewModel.updateHistory()
@@ -350,7 +348,7 @@ fun AndroidVideoView(
     mediaController: MediaController?,
     onControllerVisibilityChange: (Boolean) -> Unit
 ) {
-    val activity = LocalContext.current as ComponentActivity
+    val activity = findActivity()
     AndroidView(modifier = modifier, factory = {
         PlayerView(it).apply {
             layoutParams = FrameLayout.LayoutParams(
@@ -374,7 +372,7 @@ fun AndroidVideoView(
                     // reflect its new bounds.
                     val sourceRectHint = Rect()
                     getGlobalVisibleRect(sourceRectHint)
-                    activity.setPictureInPictureParams(
+                    activity?.setPictureInPictureParams(
                         PictureInPictureParams.Builder().setSourceRectHint(sourceRectHint)
                             .build()
                     )
