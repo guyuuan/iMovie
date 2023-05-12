@@ -1,3 +1,4 @@
+@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     id("chitanda.android.lib")
     id("chitanda.android.hilt")

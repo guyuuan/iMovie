@@ -31,6 +31,7 @@ include( ":core:database")
 include( ":core:model")
 include( ":core:network")
 include(":core:datastore")
+include(":core:downloader")
 
 include( ":feature:home")
 include( ":feature:play")
