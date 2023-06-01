@@ -1,7 +1,7 @@
 package cn.chitanda.app.core.downloader.m3u8
 
+import cn.chitanda.app.core.downloader.network.DownloadNetwork
 import kotlinx.coroutines.test.runTest
-import okhttp3.OkHttpClient
 import org.junit.Before
 import org.junit.Test
 
@@ -17,12 +17,13 @@ class M3u8ParserTest {
 
     @Before
     fun setup() {
-        parser = M3u8Parser(OkHttpClient())
+        parser = M3u8Parser(DownloadNetwork())
     }
 
     @Test
-    fun test_m3u8_parser() = runTest (dispatchTimeoutMs = 6000000L){
-        val url = "https://v.gsuus.com/play/yb8OZ2oa/index.m3u8"
+    fun test_m3u8_parser() = runTest(dispatchTimeoutMs = 6000000L) {
+//        val url = "https://v.gsuus.com/play/yb8OZ2oa/index.m3u8"
+        val url = "http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8"
         val data = parser.parse(url)
         println(data.toString())
         assert(data != null)
