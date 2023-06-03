@@ -19,8 +19,8 @@ abstract class DownloadTaskQueue<T : DownloadTask>(queue: Queue<T>) :
         return find { it.originUrl == url } != null
     }
 
-    fun updateHead(block: T.() -> T) {
-        poll()?.block()?.let {
+    fun updateHead(updater: T.() -> T) {
+        poll()?.updater()?.let {
             offer(it)
         }
     }

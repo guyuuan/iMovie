@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -49,7 +50,7 @@ class PlayScreenViewModel @Inject constructor(
         super.onIsPlayingChanged(isPlaying)
         hasPlayed = true
         val controller = _controller ?: return
-        Log.d(TAG, "onIsPlayingChanged: $isPlaying")
+        Timber.d( "onIsPlayingChanged: $isPlaying")
         safeLaunch {
             val history = updateHistory()
             _playUiState.setState {
@@ -125,7 +126,7 @@ class PlayScreenViewModel @Inject constructor(
     }
 
     override fun onPlayerError(error: PlaybackException) {
-        Log.e(TAG, "onPlayerError: $error")
+        Timber.e( "onPlayerError: $error")
         super.onPlayerError(error)
     }
 
@@ -250,7 +251,7 @@ class PlayScreenViewModel @Inject constructor(
                 ).also { update = false })
             }
         }
-        Log.d(TAG, "updateHistory: $history")
+        Timber.d( "updateHistory: $history")
         if (history != null) {
             if (update) {
                 historyRepository.updateHistory(history)

@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.retrofit.core)
     implementation(libs.okhttp.core)
     implementation(libs.okio.core)
+    implementation(libs.kotlinx.datetime)
     testImplementation(libs.kotlinx.coroutines.test)
     implementation(libs.androidx.media3.hls)
     implementation(libs.androidx.media3.exoplayer)

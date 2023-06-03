@@ -9,6 +9,8 @@ abstract class DownloadTask : Comparable<DownloadTask> {
     abstract val id: Int
     abstract val originUrl: String
     abstract val priority: Int
+    abstract val createTime:Long
+    abstract val updateTime:Long
     override fun compareTo(other: DownloadTask): Int {
         return when {
             priority > other.priority -> 1

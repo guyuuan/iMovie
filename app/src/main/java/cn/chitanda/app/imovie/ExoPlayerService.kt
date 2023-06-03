@@ -3,7 +3,6 @@ package cn.chitanda.app.imovie
 import android.app.PendingIntent
 import android.app.TaskStackBuilder
 import android.content.Intent
-import android.util.Log
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
@@ -16,6 +15,7 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.AndroidEntryPoint
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -35,7 +35,7 @@ class ExoPlayerService : MediaLibraryService() {
     private val mediaSessionCallback = CustomMediaLibrarySessionCallback()
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession {
-        Log.d(TAG, "onGetSession: ")
+        Timber.d( "onGetSession: ")
         return mediaSession
     }
 
@@ -71,7 +71,7 @@ class ExoPlayerService : MediaLibraryService() {
             session: MediaSession,
             controller: MediaSession.ControllerInfo,
         ): MediaSession.ConnectionResult {
-            Log.d(TAG, "onConnect: ")
+            Timber.d( "onConnect: ")
             val connectionResult = super.onConnect(session, controller)
             val availableSessionCommands = connectionResult.availableSessionCommands.buildUpon()
             return MediaSession.ConnectionResult.accept(
@@ -83,7 +83,7 @@ class ExoPlayerService : MediaLibraryService() {
 
         override fun onPostConnect(session: MediaSession, controller: MediaSession.ControllerInfo) {
             super.onPostConnect(session, controller)
-            Log.d(TAG, "onPostConnect: ")
+            Timber.d( "onPostConnect: ")
         }
 
         override fun onSubscribe(
@@ -92,7 +92,7 @@ class ExoPlayerService : MediaLibraryService() {
             parentId: String,
             params: LibraryParams?,
         ): ListenableFuture<LibraryResult<Void>> {
-            Log.d(TAG, "onSubscribe: $parentId")
+            Timber.d( "onSubscribe: $parentId")
             val children =
                 mediaItemTree.getChildren()
 //            mediaSession.player.setMediaItems(children)
@@ -105,7 +105,7 @@ class ExoPlayerService : MediaLibraryService() {
             browser: MediaSession.ControllerInfo,
             params: LibraryParams?,
         ): ListenableFuture<LibraryResult<MediaItem>> {
-            Log.d(TAG, "onGetLibraryRoot: ")
+            Timber.d( "onGetLibraryRoot: ")
             val item =
                 mediaItemTree.getRootItem() ?: return Futures.immediateFuture(
                     LibraryResult.ofError(
@@ -120,7 +120,7 @@ class ExoPlayerService : MediaLibraryService() {
             browser: MediaSession.ControllerInfo,
             mediaId: String,
         ): ListenableFuture<LibraryResult<MediaItem>> {
-            Log.d(TAG, "onGetItem: ")
+            Timber.d( "onGetItem: ")
             val item = mediaItemTree.getItem(mediaId) ?: return Futures.immediateFuture(
                 LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE)
             )
@@ -135,7 +135,7 @@ class ExoPlayerService : MediaLibraryService() {
             val list = mediaItems.map {
                 mediaItemTree.getItem(it.mediaId) ?: it
             }
-            Log.d(TAG, "onAddMediaItems: ")
+            Timber.d( "onAddMediaItems: ")
             return Futures.immediateFuture(list)
         }
 
@@ -148,7 +148,7 @@ class ExoPlayerService : MediaLibraryService() {
             params: LibraryParams?,
         ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> {
             val children = mediaItemTree.getChildren()
-            Log.d(TAG, "onGetChildren: $children")
+            Timber.d( "onGetChildren: $children")
             session.notifyChildrenChanged(browser, parentId, children.size, null)
             return Futures.immediateFuture(LibraryResult.ofItemList(children, params))
         }

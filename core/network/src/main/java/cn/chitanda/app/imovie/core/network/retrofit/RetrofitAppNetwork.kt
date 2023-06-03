@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -29,6 +28,7 @@ import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Streaming
 import retrofit2.http.Url
+import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -72,12 +72,12 @@ class RetrofitAppNetwork @Inject constructor(
 ) : AppNetworkDataSource {
 
     private val networkApi = Retrofit.Builder().baseUrl(AppBaseUrl)
-        .client(OkHttpClient.Builder().addInterceptor(HttpLoggingInterceptor{
-            Log.d(TAG, it)
+        .client(OkHttpClient.Builder().addInterceptor(HttpLoggingInterceptor {
+            Timber.d(it)
         }.apply {
             setLevel(HttpLoggingInterceptor.Level.BODY)
         }).build()).addConverterFactory(
-            @OptIn(ExperimentalSerializationApi::class) networkJson.asConverterFactory(
+            networkJson.asConverterFactory(
                 "application/json".toMediaType()
             )
         ).build().create(RetrofitAppNetworkApi::class.java)
@@ -112,7 +112,7 @@ class RetrofitAppNetwork @Inject constructor(
                 ?: url.split("/").last()
             val filePath = "$savePath/$filename"
             val tempFile = File("$filePath.tmp")
-            if(tempFile.exists()){
+            if (tempFile.exists()) {
                 tempFile.delete()
             }
             response.body()?.byteStream()?.use { input ->

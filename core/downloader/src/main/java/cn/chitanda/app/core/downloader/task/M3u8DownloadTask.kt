@@ -1,6 +1,7 @@
 package cn.chitanda.app.core.downloader.task
 
 import cn.chitanda.app.core.downloader.m3u8.M3u8Data
+import kotlinx.datetime.Clock
 
 /**
  * @author: Chen
@@ -12,33 +13,76 @@ sealed class M3u8DownloadTask(
     override val id: Int,
     val coverImageUrl: String?,
     override val priority: Int = 0,
+    override val createTime: Long,
+    override val updateTime: Long,
 ) : DownloadTask(), TaskStateTransform<ActualDownloadTask> {
+    companion object {
+        private fun nowMilliseconds() = Clock.System.now().toEpochMilliseconds()
+    }
 
     class Initially(
         originUrl: String, taskId: Int, coverImageUrl: String?,
-    ) : M3u8DownloadTask(originUrl, taskId, coverImageUrl) {
+        createTime: Long = nowMilliseconds(),
+    ) : M3u8DownloadTask(
+        originUrl, taskId, coverImageUrl, createTime = createTime, updateTime = createTime
+    ) {
         override fun parse(m3u8Data: M3u8Data): Parsed {
-            return Parsed(originUrl, id, m3u8Data, coverImageUrl)
+            return Parsed(originUrl, id, m3u8Data, coverImageUrl, createTime, updateTime)
         }
     }
 
-    class Parsed(originUrl: String, taskId: Int, val m3u8Data: M3u8Data, coverImageUrl: String?) :
-        M3u8DownloadTask(
-            originUrl, taskId, coverImageUrl, priority = DownloadTaskState.initially.ordinal
-        ) {
+
+    class Parsed(
+        originUrl: String,
+        taskId: Int,
+        val m3u8Data: M3u8Data,
+        coverImageUrl: String?,
+        createTime: Long,
+        updateTime: Long
+    ) : M3u8DownloadTask(
+        originUrl,
+        taskId,
+        coverImageUrl,
+        priority = DownloadTaskState.initially.ordinal,
+        createTime,
+        updateTime
+    ) {
         override fun start(tasks: List<ActualDownloadTask>): Downloading {
-            return Downloading(originUrl, id, coverImageUrl, m3u8Data, tasks)
+            return Downloading(
+                originUrl,
+                id,
+                coverImageUrl,
+                m3u8Data,
+                tasks,
+                createTime = createTime,
+                updateTime = nowMilliseconds()
+            )
         }
 
-        override fun pending(): Pending = Pending(originUrl, id, m3u8Data, coverImageUrl)
+        override fun pending(): Pending = Pending(
+            originUrl,
+            id,
+            m3u8Data,
+            coverImageUrl,
+            createTime = createTime,
+            updateTime = nowMilliseconds()
+        )
     }
 
-    class Pending(originUrl: String, taskId: Int, val m3u8Data: M3u8Data, coverImageUrl: String?) :
-        M3u8DownloadTask(
-            originUrl, taskId, coverImageUrl, priority = DownloadTaskState.pending.ordinal
-        ) {
+    class Pending(
+        originUrl: String,
+        taskId: Int,
+        val m3u8Data: M3u8Data,
+        coverImageUrl: String?,
+        createTime: Long,
+        updateTime: Long
+    ) : M3u8DownloadTask(
+        originUrl, taskId, coverImageUrl, DownloadTaskState.pending.ordinal, createTime, updateTime
+    ) {
         override fun start(tasks: List<ActualDownloadTask>): Downloading {
-            return Downloading(originUrl, id, coverImageUrl, m3u8Data, tasks)
+            return Downloading(
+                originUrl, id, coverImageUrl, m3u8Data, tasks, createTime, nowMilliseconds()
+            )
         }
     }
 
@@ -47,18 +91,31 @@ sealed class M3u8DownloadTask(
         taskId: Int,
         coverImageUrl: String?,
         val m3u8Data: M3u8Data,
-        val tasks: List<ActualDownloadTask>
-    ) : M3u8DownloadTask(originUrl, taskId, coverImageUrl) {
+        val tasks: List<ActualDownloadTask>,
+        createTime: Long,
+        updateTime: Long
+    ) : M3u8DownloadTask(
+        originUrl,
+        taskId,
+        coverImageUrl,
+        DownloadTaskState.downloading.ordinal,
+        createTime,
+        updateTime
+    ) {
         override fun pause(): Paused {
-            return Paused(originUrl, id, coverImageUrl, m3u8Data, tasks)
+            return Paused(
+                originUrl, id, coverImageUrl, m3u8Data, tasks, createTime, nowMilliseconds()
+            )
         }
 
         override fun complete(): Completed {
-            return Completed(originUrl, id, coverImageUrl)
+            return Completed(originUrl, id, coverImageUrl, createTime, nowMilliseconds())
         }
 
         override fun failed(error: Throwable): Failed {
-            return Failed(originUrl, id, coverImageUrl, m3u8Data, error)
+            return Failed(
+                originUrl, id, coverImageUrl, m3u8Data, error, createTime, nowMilliseconds()
+            )
         }
     }
 
@@ -67,32 +124,55 @@ sealed class M3u8DownloadTask(
         taskId: Int,
         coverImageUrl: String?,
         val m3u8Data: M3u8Data,
-        val tasks: List<ActualDownloadTask>
+        val tasks: List<ActualDownloadTask>,
+        createTime: Long,
+        updateTime: Long
     ) : M3u8DownloadTask(
-        originUrl, taskId, coverImageUrl,
-        priority = DownloadTaskState.pause.ordinal
+        originUrl,
+        taskId,
+        coverImageUrl,
+        priority = DownloadTaskState.pause.ordinal,
+        createTime,
+        updateTime
     ) {
         override fun resume(): Downloading {
-            return Downloading(originUrl, id, coverImageUrl, m3u8Data, tasks)
+            return Downloading(
+                originUrl, id, coverImageUrl, m3u8Data, tasks, createTime, nowMilliseconds()
+            )
         }
     }
 
     class Completed(
-        originUrl: String, taskId: Int, coverImageUrl: String?
-    ) : M3u8DownloadTask(originUrl, taskId, coverImageUrl)
+        originUrl: String, taskId: Int, coverImageUrl: String?, createTime: Long, updateTime: Long
+    ) : M3u8DownloadTask(
+        originUrl,
+        taskId,
+        coverImageUrl,
+        priority = DownloadTaskState.completed.ordinal,
+        createTime,
+        updateTime
+    )
 
     class Failed(
         originUrl: String,
         taskId: Int,
         coverImageUrl: String?,
         val m3u8Data: M3u8Data,
-        val error: Throwable
+        val error: Throwable,
+        createTime: Long,
+        updateTime: Long
     ) : M3u8DownloadTask(
-        originUrl, taskId, coverImageUrl,
-        priority = DownloadTaskState.failed.ordinal
+        originUrl,
+        taskId,
+        coverImageUrl,
+        priority = DownloadTaskState.failed.ordinal,
+        createTime,
+        updateTime
     ) {
         override fun retry(tasks: List<ActualDownloadTask>): Downloading {
-            return Downloading(originUrl, id, coverImageUrl, m3u8Data, tasks)
+            return Downloading(
+                originUrl, id, coverImageUrl, m3u8Data, tasks, createTime, nowMilliseconds()
+            )
         }
     }
 }

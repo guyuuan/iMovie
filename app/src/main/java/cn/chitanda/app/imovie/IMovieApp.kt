@@ -2,6 +2,7 @@ package cn.chitanda.app.imovie
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
+import timber.log.Timber
 
 /**
  *@author: Chen
@@ -9,4 +10,13 @@ import dagger.hilt.android.HiltAndroidApp
  *@description:
  **/
 @HiltAndroidApp
-class IMovieApp : Application()
+class IMovieApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        if (BuildConfig.DEBUG) {
+            Timber.plant(
+                Timber.DebugTree()
+            )
+        }
+    }
+}

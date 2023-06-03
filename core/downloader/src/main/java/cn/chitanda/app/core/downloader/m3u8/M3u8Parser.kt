@@ -22,8 +22,7 @@ import cn.chitanda.app.core.downloader.m3u8.M3U8Constants.TAG_STREAM_INF
 import cn.chitanda.app.core.downloader.m3u8.M3U8Constants.TAG_TARGET_DURATION
 import cn.chitanda.app.core.downloader.m3u8.M3U8Constants.TAG_VERSION
 import cn.chitanda.app.core.downloader.network.IDownloadNetwork
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import okio.EOFException
 import java.net.URL
 
@@ -33,17 +32,19 @@ import java.net.URL
  * @description:
  **/
 internal class M3u8Parser(private val network: IDownloadNetwork) {
-    suspend fun parse(url: String): M3u8Data? = withContext(Dispatchers.IO) {
+    suspend fun parse(url: String): M3u8Data? {
         val handler = ParserHandler(url)
-        try {
+        return try {
             val response = network.download(url)
             val data = response.body()?.use {
                 it.source().use { source ->
-                    while (true) {
-                        try {
-                            handler.start(source.readUtf8LineStrict())
-                        } catch (e: EOFException) {
-                            break
+                    withTimeout(2000L){
+                        while (true) {
+                            try {
+                                handler.start(source.readUtf8LineStrict())
+                            } catch (e: EOFException) {
+                                break
+                            }
                         }
                     }
                     handler.create()
@@ -58,6 +59,7 @@ internal class M3u8Parser(private val network: IDownloadNetwork) {
             null
         }
     }
+
 }
 
 class ParserHandler(url: String) {
@@ -89,8 +91,8 @@ class ParserHandler(url: String) {
 
     fun next(): Boolean = true
 
-    fun resolve(block: M3u8DataBuilder.() -> Unit): Boolean {
-        builder.block()
+    fun resolve(resovler: M3u8DataBuilder.() -> Unit): Boolean {
+        builder.resovler()
         return false
     }
 
