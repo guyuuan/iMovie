@@ -2,13 +2,16 @@ package cn.chitanda.app.core.downloader
 
 import cn.chitanda.app.core.downloader.extension.md5
 import cn.chitanda.app.core.downloader.file.DownloadFileManager
+import cn.chitanda.app.core.downloader.repository.TestTaskRepository
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 import okio.Path
 import okio.Path.Companion.toPath
 import org.junit.Before
 import org.junit.Test
-import kotlin.coroutines.EmptyCoroutineContext
+import timber.log.Timber
 import kotlin.test.assertTrue
 
 /**
@@ -18,20 +21,24 @@ import kotlin.test.assertTrue
  **/
 class M3u8DownloaderTest {
     private lateinit var downloader: M3u8Downloader
-    private val context = EmptyCoroutineContext + SupervisorJob()
+    private val coroutineContext =
+        Dispatchers.IO + SupervisorJob() + CoroutineName("DownloadTestContext")
 
     @Before
     fun setup() {
+        Timber.plant(Timber.DebugTree())
         downloader = M3u8Downloader(
             fileManager = TestDownloadFileManager(),
-            coroutineContext = context
+            coroutineContext = coroutineContext,
+            taskRepository = TestTaskRepository()
         )
     }
 
     @Test
-    fun download_m3u8_test() = runBlocking(context) {
+    fun download_m3u8_test() = runBlocking {
         val url = "https://v.gsuus.com/play/yb8OZ2oa/index.m3u8"
-        downloader.startDownload(url, 1)
+        downloader.startDownload(url)
+        downloader.joinTestBlock()
 //        while (true){}
     }
 
@@ -45,9 +52,9 @@ class M3u8DownloaderTest {
     }
 }
 
-class TestDownloadFileManager : DownloadFileManager(SYSTEM) {
+class TestDownloadFileManager : DownloadFileManager(basePath = SYSTEM_TEMPORARY_DIRECTORY, SYSTEM) {
 
     override fun createFilePath(fileName: String, dir: String?): Path {
-        return "/Users/chunjinchen/Downloads/${if (dir != null) "$dir/" else ""}$fileName".toPath()
+        return "$basePath${Path.DIRECTORY_SEPARATOR}${if (dir != null) "$dir${Path.DIRECTORY_SEPARATOR}" else ""}$fileName".toPath()
     }
 }

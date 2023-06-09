@@ -17,7 +17,7 @@ class BlockExecutor<T, R>(
 
     suspend fun execute(t: T): Job {
         channel.send(Unit)
-        return context.launch {
+        return with(context) {
             channel.runBlock {
                 runnable(t)
             }
@@ -26,10 +26,12 @@ class BlockExecutor<T, R>(
 }
 
 context (CoroutineScope)
-inline fun Channel<*>.runBlock(crossinline block: suspend () -> Unit) {
-    launch {
+inline fun Channel<*>.runBlock(crossinline block: suspend () -> Unit): Job {
+    return launch {
         block()
-    }.invokeOnCompletion {
-        launch { receive() }
+    }.apply {
+        invokeOnCompletion {
+            launch { receive() }
+        }
     }
 }

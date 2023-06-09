@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -30,10 +29,8 @@ class BlockExecutorTest {
                 println(1 / b)
             }
 
-            listOf(
-                executor.execute(1),
-                executor.execute(0),
-                executor.execute(2)
-            ).joinAll()
+                executor.execute(1)?.join()
+                executor.execute(0)?.join()
+                executor.execute(2)?.join()
         }
 }

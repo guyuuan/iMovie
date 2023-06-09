@@ -1,5 +1,6 @@
 package cn.chitanda.app.core.downloader.m3u8
 
+import cn.chitanda.app.core.downloader.TestDownloadFileManager
 import cn.chitanda.app.core.downloader.network.DownloadNetwork
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -17,7 +18,7 @@ class M3u8ParserTest {
 
     @Before
     fun setup() {
-        parser = M3u8Parser(DownloadNetwork())
+        parser = M3u8Parser(DownloadNetwork(),TestDownloadFileManager())
     }
 
     @Test

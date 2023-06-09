@@ -6,7 +6,7 @@ package cn.chitanda.app.core.downloader.task
  * @description:
  **/
 abstract class DownloadTask : Comparable<DownloadTask> {
-    abstract val id: Int
+    abstract val id: String
     abstract val originUrl: String
     abstract val priority: Int
     abstract val createTime:Long

@@ -1,5 +1,8 @@
 package cn.chitanda.app.core.downloader.m3u8
 
+import cn.chitanda.app.core.downloader.extension.md5
+import cn.chitanda.app.core.downloader.extension.plus
+import cn.chitanda.app.core.downloader.file.DownloadFileManager
 import cn.chitanda.app.core.downloader.m3u8.M3U8Constants.KEYFORMAT_IDENTITY
 import cn.chitanda.app.core.downloader.m3u8.M3U8Constants.METHOD_AES_128
 import cn.chitanda.app.core.downloader.m3u8.M3U8Constants.METHOD_NONE
@@ -23,6 +26,7 @@ import cn.chitanda.app.core.downloader.m3u8.M3U8Constants.TAG_TARGET_DURATION
 import cn.chitanda.app.core.downloader.m3u8.M3U8Constants.TAG_VERSION
 import cn.chitanda.app.core.downloader.network.IDownloadNetwork
 import kotlinx.coroutines.withTimeout
+import okio.BufferedSource
 import okio.EOFException
 import java.net.URL
 
@@ -31,23 +35,20 @@ import java.net.URL
  * @createTime: 2023/5/10 14:48
  * @description:
  **/
-internal class M3u8Parser(private val network: IDownloadNetwork) {
+internal class M3u8Parser(
+    private val network: IDownloadNetwork, private val fileManager: DownloadFileManager
+) {
     suspend fun parse(url: String): M3u8Data? {
         val handler = ParserHandler(url)
         return try {
             val response = network.download(url)
             val data = response.body()?.use {
                 it.source().use { source ->
-                    withTimeout(2000L){
-                        while (true) {
-                            try {
-                                handler.start(source.readUtf8LineStrict())
-                            } catch (e: EOFException) {
-                                break
-                            }
+                    fileManager.write(fileManager.createFilePath("origin.m3u8", url.md5())) {
+                        parseSource(handler, source) { line ->
+                            writeUtf8(line).writeByte('\n'.code)
                         }
                     }
-                    handler.create()
                 }
             }
             if (data?.hasStreamInfo == true && data.mediaList.firstOrNull() != null) {
@@ -60,6 +61,35 @@ internal class M3u8Parser(private val network: IDownloadNetwork) {
         }
     }
 
+    suspend fun parseFomeFile(originUrl: String): M3u8Data? {
+        val handler = ParserHandler(originUrl)
+        return try {
+            fileManager.read(fileManager.basePath + originUrl.md5() + "origin.m3u8") {
+                parseSource(handler, this)
+            }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private suspend fun parseSource(
+        handler: ParserHandler,
+        source: BufferedSource,
+        write: (suspend (String) -> Unit)? = null
+    ): M3u8Data {
+        return withTimeout(2000L) {
+            while (true) {
+                try {
+                    val line = source.readUtf8LineStrict()
+                    handler.start(line)
+                    write?.invoke(line)
+                } catch (e: EOFException) {
+                    break
+                }
+            }
+            handler.create()
+        }
+    }
 }
 
 class ParserHandler(url: String) {

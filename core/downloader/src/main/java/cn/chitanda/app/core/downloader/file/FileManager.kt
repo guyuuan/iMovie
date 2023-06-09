@@ -13,11 +13,11 @@ import okio.Source
  * @description:
  **/
 interface IDownloadFileManager {
-    fun createFilePath(fileName: String, dir: String?): Path
+    fun createFilePath(fileName: String, dir: String?=null): Path
 
 }
 
-abstract class DownloadFileManager(delegate: FileSystem) : ForwardingFileSystem(delegate),
+abstract class DownloadFileManager(val basePath: Path, delegate: FileSystem) : ForwardingFileSystem(delegate),
     IDownloadFileManager {
     override fun sink(file: Path, mustCreate: Boolean): Sink {
         file.parent?.let(::createDirectories)
