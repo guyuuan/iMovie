@@ -1,6 +1,7 @@
 package cn.chitanda.app.core.downloader.queue
 
 import cn.chitanda.app.core.downloader.task.DownloadTask
+import cn.chitanda.app.core.downloader.usecase.UpdateTaskUseCase
 import java.util.Queue
 
 /**
@@ -8,7 +9,9 @@ import java.util.Queue
  * @createTime: 2023/6/1 16:13
  * @description:
  **/
-abstract class DownloadTaskQueue<T : DownloadTask>(queue: Queue<T>) : Queue<T> by queue {
+internal abstract class DownloadTaskQueue<T : DownloadTask>(
+    private val updateUseCase: UpdateTaskUseCase<T>, queue: Queue<T>
+) : Queue<T> by queue {
     open val taskQueueListener: TaskQueueListener<T>? = null
     fun getTaskById(id: Any): T? {
         return find { it.id == id }
@@ -18,28 +21,29 @@ abstract class DownloadTaskQueue<T : DownloadTask>(queue: Queue<T>) : Queue<T> b
         return find { it.originUrl == url } != null
     }
 
-    open fun updateHead(updater: T.() -> T): Boolean {
+    open fun updateHead(check: Boolean = true, updater: T.() -> T): Boolean {
         return poll()?.updater()?.let { new ->
-            if (offer(new)) {
-                checkTask(new)
-                true
-            } else {
-                false
+            offer(new).also {
+                if (it) {
+                    updateUseCase(new)
+                    if (check) checkTask(new)
+                }
             }
         } ?: false
     }
 
-    open fun updateById(id: Any, updater: T.() -> T): Boolean {
+    open fun updateById(id: Any, check: Boolean = true, updater: T.() -> T): Boolean {
         val task = find { it.id == id }
         return if (task != null) {
             remove(task)
             val new = task.updater()
-            if (offer(new)) {
-                checkTask(new)
-                true
-            } else {
-                false
+            offer(new).also {
+                if (it) {
+                    updateUseCase(new)
+                    if (check) checkTask(new)
+                }
             }
+
         } else {
             false
         }
@@ -49,12 +53,22 @@ abstract class DownloadTaskQueue<T : DownloadTask>(queue: Queue<T>) : Queue<T> b
 
     protected abstract fun checkTask(task: T)
 
+    protected fun doNext() {
+        peek()?.let {
+            checkTask(it)
+        }
+    }
+
 }
 
-interface TaskQueueListener<T : DownloadTask> {
+internal interface TaskQueueListener<T : DownloadTask> {
     fun onComplete(task: T)
 
     fun onFailed(task: T)
+
+    fun onPause(task: T)
+    fun onStart(task: T)
+    fun onPending(task: T)
 
     fun executeTask(task: T)
     fun retryTask(task: T)

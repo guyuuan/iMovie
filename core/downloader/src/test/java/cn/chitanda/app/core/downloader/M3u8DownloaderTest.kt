@@ -36,7 +36,8 @@ class M3u8DownloaderTest {
 
     @Test
     fun download_m3u8_test() = runBlocking {
-        val url = "https://v.gsuus.com/play/yb8OZ2oa/index.m3u8"
+//        val url = "https://v.gsuus.com/play/yb8OZ2oa/index.m3u8"
+        val url = "http://1257120875.vod2.myqcloud.com/0ef121cdvodtransgzp1257120875/3055695e5285890780828799271/v.f230.m3u8"
         downloader.startDownload(url)
         downloader.joinTestBlock()
 //        while (true){}

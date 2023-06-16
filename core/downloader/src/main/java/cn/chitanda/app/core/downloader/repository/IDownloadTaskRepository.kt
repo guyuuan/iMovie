@@ -12,4 +12,8 @@ interface IDownloadTaskRepository {
     suspend fun createActualDownloadTask(
         mediaData: MediaData, parentTaskId: String, downloadDir: String
     ): ActualDownloadTask
+
+    suspend fun updateM3u8Task(task:M3u8DownloadTask)
+    suspend fun updateActualTask(task:ActualDownloadTask)
+    suspend fun getTaskIsFinished(id:String):Boolean
 }

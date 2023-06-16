@@ -2,6 +2,7 @@ package cn.chitanda.app.core.downloader.queue
 
 import cn.chitanda.app.core.downloader.task.ActualDownloadTask
 import cn.chitanda.app.core.downloader.task.DownloadTaskState
+import cn.chitanda.app.core.downloader.usecase.UpdateTaskUseCase
 import java.util.concurrent.PriorityBlockingQueue
 
 /**
@@ -9,23 +10,26 @@ import java.util.concurrent.PriorityBlockingQueue
  * @createTime: 2023/6/5 09:25
  * @description:
  **/
-class ActualDownloadTaskQueue private constructor(
+internal class ActualDownloadTaskQueue private constructor(
     queue: PriorityBlockingQueue<ActualDownloadTask>,
-    override val taskQueueListener: ActualTaskQueueListener?,
+    override val taskQueueListener: ActualTaskQueueListener,
     private val autoRetry: Boolean,
-    private val maxRetryCount: Int
-) : DownloadTaskQueue<ActualDownloadTask>(queue) {
+    private val maxRetryCount: Int,
+    useCase: UpdateTaskUseCase<ActualDownloadTask>
+) : DownloadTaskQueue<ActualDownloadTask>(useCase, queue) {
     companion object {
         private var instance: ActualDownloadTaskQueue? = null
 
         @JvmStatic
         operator fun invoke(
-            taskQueueListener: ActualTaskQueueListener? = null,
+            taskQueueListener: ActualTaskQueueListener,
             autoRetry: Boolean,
-            maxRetryCount: Int
+            maxRetryCount: Int,
+            useCase: UpdateTaskUseCase<ActualDownloadTask>
         ): ActualDownloadTaskQueue = instance ?: synchronized(this) {
             instance ?: ActualDownloadTaskQueue(
-                PriorityBlockingQueue(), taskQueueListener, autoRetry, maxRetryCount
+                PriorityBlockingQueue(), taskQueueListener, autoRetry,
+                maxRetryCount, useCase
             ).also {
                 instance = it
             }
@@ -42,28 +46,32 @@ class ActualDownloadTaskQueue private constructor(
             DownloadTaskState.completed -> {
                 remove(task)
                 taskExecuteRecord.remove(task.id)
-                taskQueueListener?.onComplete(task)
+                taskQueueListener.onComplete(task)
+                doNext()
             }
 
             DownloadTaskState.failed -> {
                 synchronized(taskExecuteRecord) {
                     if (taskExecuteRecord.getOrPut(task.id) { 0 } < maxRetryCount && autoRetry) {
-                        taskQueueListener?.retryTask(task)
-                    }else{
+                        taskQueueListener.retryTask(task)
                     }
                 }
+                doNext()
             }
 
             DownloadTaskState.initially, DownloadTaskState.pending -> {
-                taskQueueListener?.executeTask(task)
+                taskQueueListener.executeTask(task)
             }
 
-            DownloadTaskState.pause -> {}
+            DownloadTaskState.pause -> {
+                taskQueueListener.onPause(task)
+            }
+
             DownloadTaskState.downloading -> {
                 synchronized(taskExecuteRecord) {
                     taskExecuteRecord[task.id] = taskExecuteRecord.getOrPut(
                         task.id
-                    ) { 0 }.inc()
+                    ) { 0 }.inc().coerceAtLeast(0)
                 }
             }
 
@@ -77,5 +85,14 @@ class ActualDownloadTaskQueue private constructor(
     }
 }
 
-interface ActualTaskQueueListener : TaskQueueListener<ActualDownloadTask> {
+internal interface ActualTaskQueueListener : TaskQueueListener<ActualDownloadTask> {
+    override fun onPause(task: ActualDownloadTask) {
+    }
+
+    override fun onStart(task: ActualDownloadTask) {
+    }
+
+    override fun onPending(task: ActualDownloadTask) {
+    }
+
 }

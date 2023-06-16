@@ -2,6 +2,7 @@ package cn.chitanda.app.core.downloader.db
 
 import android.content.Context
 import androidx.annotation.VisibleForTesting
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -17,7 +18,12 @@ import cn.chitanda.app.core.downloader.db.entites.M3u8TaskEntity
  * @createTime: 2023/6/7 16:36
  * @description:
  **/
-@Database(entities = [ActualTaskEntity::class, M3u8TaskEntity::class], version = 1)
+@Database(
+    entities = [ActualTaskEntity::class, M3u8TaskEntity::class], version = 2, autoMigrations = [
+        AutoMigration(from = 1, to = 2)
+    ],
+    exportSchema = true
+)
 @TypeConverters(DownloadStateConverter::class)
 abstract class DownloadTaskDatabase : RoomDatabase() {
     abstract fun actualTaskDao(): ActualTaskDao
@@ -33,9 +39,10 @@ abstract class DownloadTaskDatabase : RoomDatabase() {
                     context,
                     DownloadTaskDatabase::class.java,
                     "task_db"
-                ).build().also {
-                    instance = it
-                }
+                )
+                    .build().also {
+                        instance = it
+                    }
             }
 
         @JvmStatic

@@ -18,6 +18,7 @@ import cn.chitanda.app.core.downloader.repository.IDownloadTaskRepository
 import cn.chitanda.app.core.downloader.task.ActualDownloadTask
 import cn.chitanda.app.core.downloader.task.DownloadTaskState
 import cn.chitanda.app.core.downloader.task.M3u8DownloadTask
+import cn.chitanda.app.core.downloader.usecase.UpdateTaskUseCase
 import cn.chitanda.app.core.downloader.utils.nowMilliseconds
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -69,60 +70,104 @@ class M3u8Downloader private constructor(
 
     private val network: IDownloadNetwork = DownloadNetwork()
 
+    var downloadProgressListener: DownloadProgressListener? = null
+
     //M3u8下载任务队列
-    private val taskQueue: DownloadTaskQueue<M3u8DownloadTask> =
-        M3u8DownloadTaskQueue(autoRetry = config.autoRetry,
-            maxRetryCount = config.maxTaskCount,
-            taskQueueListener = object : M3u8TaskQueueListener {
-                override fun onParse(task: M3u8DownloadTask.Initially) {
-                    launch {
-                        parserExecutor.execute(task)
-                    }
+    private val taskQueue: DownloadTaskQueue<M3u8DownloadTask> = M3u8DownloadTaskQueue(
+        autoRetry = config.autoRetry,
+        maxRetryCount = config.maxTaskCount,
+        taskQueueListener = object : M3u8TaskQueueListener {
+            override fun onParse(task: M3u8DownloadTask.Initially) {
+                launch {
+                    parserExecutor.execute(task)
                 }
+            }
 
-                override fun onComplete(task: M3u8DownloadTask) {
-
+            override fun onComplete(task: M3u8DownloadTask) {
+                if (task is M3u8DownloadTask.Completed) {
+                    downloadProgressListener?.onComplete(task)
                 }
+            }
 
-                override fun onFailed(task: M3u8DownloadTask) {
-                    
+            override fun onFailed(task: M3u8DownloadTask) {
+                if (task is M3u8DownloadTask.Failed) {
+                    downloadProgressListener?.onFailed(task)
                 }
+            }
 
-                override fun executeTask(task: M3u8DownloadTask) {
-                    launch { downloadExecutor.execute(task) }
+            override fun onPause(task: M3u8DownloadTask) {
+                if (task is M3u8DownloadTask.Paused) {
+                    downloadProgressListener?.onPause(task)
                 }
+            }
 
-                override fun retryTask(task: M3u8DownloadTask) {
-                    launch { downloadExecutor.execute(task) }
+            override fun onStart(task: M3u8DownloadTask) {
+                if (task is M3u8DownloadTask.Downloading) {
+                    downloadProgressListener?.onStart(task)
                 }
-            })
+            }
+
+            override fun onPending(task: M3u8DownloadTask) {
+                if (task is M3u8DownloadTask.Pending) {
+                    downloadProgressListener?.onPending(task)
+                }
+            }
+
+            override fun executeTask(task: M3u8DownloadTask) {
+                launch { downloadExecutor.execute(task) }
+            }
+
+            override fun retryTask(task: M3u8DownloadTask) {
+                launch { downloadExecutor.execute(task) }
+            }
+        },
+        useCase = UpdateTaskUseCase {
+            launch {
+                taskRepository.updateM3u8Task(it)
+            }
+        }
+    )
 
     private val actualTaskQueueListener = object : ActualTaskQueueListener {
         override fun onComplete(task: ActualDownloadTask) {
-
+            launch {
+                val result = taskRepository.getTaskIsFinished(task.parentTaskId)
+                if (result) {
+                    taskQueue.updateById(task.parentTaskId) {
+                        Timber.i("${this::class.simpleName} ${id} is finished")
+                        complete()
+                    }
+                }
+            }
         }
 
         override fun onFailed(task: ActualDownloadTask) {
-
+            launch {
+                if (taskRepository.getTaskIsFinished(task.id)) {
+                    Timber.d("${task.originUrl} is finished by failed")
+                    taskQueue.updateById(task.parentTaskId) {
+                        failed(task.error)
+                    }
+                }
+            }
         }
 
         override fun executeTask(task: ActualDownloadTask) {
             launch {
                 taskExecutor.execute(task) {
-                    actualTaskQueue.updateById(task.id) {
+                    actualTaskQueue.updateById(task.id, check = false) {
                         copy(state = DownloadTaskState.pending)
                     }
-//                    println("${task.id}[${task.originUrl}] 开始等待")
                     actualTaskQueue.getTaskById(task.id)
                 }
             }
         }
 
         override fun retryTask(task: ActualDownloadTask) {
-            launch {
-                taskExecutor.execute(task)
-                println("${task.id}[${task.originUrl}] 重新开始下载 error = ${task.error}")
+            actualTaskQueue.updateById(task.id, check = false) {
+                copy(state = DownloadTaskState.pending)
             }
+            Timber.d("${task.id}[${task.originUrl}] 进入重试 error = ${task.error}")
         }
     }
 
@@ -130,7 +175,10 @@ class M3u8Downloader private constructor(
     private val actualTaskQueue: ActualDownloadTaskQueue = ActualDownloadTaskQueue(
         autoRetry = config.autoRetry,
         maxRetryCount = config.retryCount,
-        taskQueueListener = actualTaskQueueListener
+        taskQueueListener = actualTaskQueueListener,
+        useCase = UpdateTaskUseCase {
+            launch { taskRepository.updateActualTask(it) }
+        }
     )
     private val parserExecutor = BlockExecutor(1, this, ::parserM3u8)
     private val downloadExecutor = BlockExecutor(config.maxTaskCount, this, ::download)
@@ -148,6 +196,9 @@ class M3u8Downloader private constructor(
             is M3u8DownloadTask.Failed -> task.m3u8Data
             else -> return
         }
+        taskQueue.updateById(task.id) {
+            start()
+        }
         val downloadDir = url.md5()
         actualTaskQueue.addAll(data.mediaList.map { mediaData ->
             taskRepository.createActualDownloadTask(mediaData, task.id, downloadDir)
@@ -159,7 +210,7 @@ class M3u8Downloader private constructor(
     private suspend fun downloadMediaData(task: ActualDownloadTask) {
         try {
             actualTaskQueue.updateById(task.id) {
-                println("$id [state = $state => ${DownloadTaskState.downloading}]")
+                Timber.d("$id [state = $state => ${DownloadTaskState.downloading}]")
                 copy(
                     state = DownloadTaskState.downloading,
                     updateTime = nowMilliseconds(),
@@ -167,6 +218,8 @@ class M3u8Downloader private constructor(
                 )
             }
             val response = network.download(task.originUrl)
+//            val header = response.headers()
+//            val des = header["Content-Disposition"]
             response.body()?.use {
                 it.source().use { source ->
                     fileManager.writeToFile(
@@ -177,7 +230,7 @@ class M3u8Downloader private constructor(
                 }
             }
             actualTaskQueue.updateById(task.id) {
-                println("${task.id}[$originUrl] 下载完成,路径为${fileManager.basePath + downloadDir + fileName}")
+                Timber.d("${task.id}[$originUrl] 下载完成,路径为${fileManager.basePath + downloadDir + fileName}")
                 copy(state = DownloadTaskState.completed, updateTime = nowMilliseconds())
             }
         } catch (e: Throwable) {
@@ -211,7 +264,7 @@ class M3u8Downloader private constructor(
 
 
     private fun exceptionHandler(context: CoroutineContext, exception: Throwable) {
-        println(exception)
+        Timber.d(exception)
     }
 
     @VisibleForTesting
@@ -222,7 +275,20 @@ class M3u8Downloader private constructor(
 
 class DownloadManagerConfig(
     val maxTaskCount: Int = 1,
-    val actualTaskCount: Int = 2,
+    val actualTaskCount: Int = 8,
     val autoRetry: Boolean = true,
     val retryCount: Int = 3
 )
+
+interface DownloadProgressListener {
+    fun onStart(task: M3u8DownloadTask.Downloading) {}
+    fun onPause(task: M3u8DownloadTask.Paused) {}
+
+    fun onPending(task: M3u8DownloadTask.Pending) {}
+
+    fun onComplete(task: M3u8DownloadTask.Completed) {}
+
+    fun onFailed(task: M3u8DownloadTask.Failed) {}
+
+
+}

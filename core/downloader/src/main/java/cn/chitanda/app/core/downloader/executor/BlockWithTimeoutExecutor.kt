@@ -27,15 +27,16 @@ class BlockWithTimeoutExecutor<T, R>(
                 }
             }
         } catch (e: TimeoutCancellationException) {
-            val t = timeout?.invoke()
-            t?.let {
-                channel.send(Unit)
-                with(context) {
-                    channel.runBlock {
-                        runnable(it)
-                    }
-                }
-            }
+            timeout?.invoke()
+            null
+//                ?.let {
+//                channel.send(Unit)
+//                with(context) {
+//                    channel.runBlock {
+//                        runnable(it)
+//                    }
+//                }
+//            }
         }
     }
 }

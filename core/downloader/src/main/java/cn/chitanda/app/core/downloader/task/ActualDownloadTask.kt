@@ -17,9 +17,9 @@ data class ActualDownloadTask(
     override val priority: Int = if (state.ordinal > 1) state.ordinal else 0
 }
 
-fun ActualTaskEntity.toActualDownloadTask(): ActualDownloadTask {
+fun ActualTaskEntity.toActualDownloadTask(id: String = this.id.toString()): ActualDownloadTask {
     return ActualDownloadTask(
-        id = id.toString(),
+        id = id,
         originUrl = originUrl,
         parentTaskId = parentTaskId,
         state = state,
@@ -32,7 +32,7 @@ fun ActualTaskEntity.toActualDownloadTask(): ActualDownloadTask {
 
 fun ActualDownloadTask.toActualTaskEntity(): ActualTaskEntity {
     return ActualTaskEntity(
-        id = id.toIntOrNull() ?: 0,
+        id = id.toLongOrNull() ?: 0,
         originUrl = originUrl,
         parentTaskId = parentTaskId,
         state = state,

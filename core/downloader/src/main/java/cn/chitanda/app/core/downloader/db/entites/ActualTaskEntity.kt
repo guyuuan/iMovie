@@ -23,7 +23,7 @@ import cn.chitanda.app.core.downloader.task.DownloadTaskState
     ]
 )
 data class ActualTaskEntity(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val originUrl: String,
     val createTime: Long,
     val updateTime: Long = createTime,

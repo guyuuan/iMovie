@@ -16,11 +16,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface ActualTaskDao {
     @Insert
-    suspend fun insertActualTask(task: ActualTaskEntity)
+    suspend fun insertActualTask(task: ActualTaskEntity):Long
 
     @Update
     suspend fun updateActualTask(task: ActualTaskEntity)
 
     @Query("SELECT COUNT(*) FROM actual_task WHERE parent_task_id == :taskId AND state == 1")
-    fun getCompletedActualTasksCountFlow(taskId: Int): Flow<Int>
+    fun getCompletedActualTasksCountFlow(taskId: String): Flow<Int>
+
+    @Query("SELECT COUNT(*) FROM actual_task WHERE parent_task_id == :taskId AND state != 1 AND state !=4")
+    fun getUndoneActualTasksCount(taskId: String): Int
 }

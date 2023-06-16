@@ -19,7 +19,7 @@ sealed class M3u8DownloadTask(
 ) : DownloadTask(), TaskStateTransform<ActualDownloadTask> {
 
     class Initially(
-        originUrl: String, taskId :String, coverImageUrl: String?,
+        originUrl: String, taskId: String, coverImageUrl: String?,
         createTime: Long = nowMilliseconds(),
         updateTime: Long = createTime,
     ) : M3u8DownloadTask(
@@ -33,7 +33,7 @@ sealed class M3u8DownloadTask(
 
     class Parsed(
         originUrl: String,
-        taskId :String,
+        taskId: String,
         val m3u8Data: M3u8Data,
         coverImageUrl: String?,
         createTime: Long,
@@ -69,7 +69,7 @@ sealed class M3u8DownloadTask(
 
     class Pending(
         originUrl: String,
-        taskId :String,
+        taskId: String,
         val m3u8Data: M3u8Data,
         coverImageUrl: String?,
         createTime: Long,
@@ -86,7 +86,7 @@ sealed class M3u8DownloadTask(
 
     class Downloading(
         originUrl: String,
-        taskId :String,
+        taskId: String,
         coverImageUrl: String?,
         val m3u8Data: M3u8Data,
         createTime: Long,
@@ -109,7 +109,7 @@ sealed class M3u8DownloadTask(
             return Completed(originUrl, id, coverImageUrl, createTime, nowMilliseconds())
         }
 
-        override fun failed(error: Throwable): Failed {
+        override fun failed(error: Throwable?): Failed {
             return Failed(
                 originUrl, id, coverImageUrl, m3u8Data, error, createTime, nowMilliseconds()
             )
@@ -118,7 +118,7 @@ sealed class M3u8DownloadTask(
 
     class Paused(
         originUrl: String,
-        taskId :String,
+        taskId: String,
         coverImageUrl: String?,
         val m3u8Data: M3u8Data,
         createTime: Long,
@@ -139,7 +139,11 @@ sealed class M3u8DownloadTask(
     }
 
     class Completed(
-        originUrl: String, taskId :String, coverImageUrl: String?, createTime: Long, updateTime: Long
+        originUrl: String,
+        taskId: String,
+        coverImageUrl: String?,
+        createTime: Long,
+        updateTime: Long
     ) : M3u8DownloadTask(
         originUrl,
         taskId,
@@ -151,7 +155,7 @@ sealed class M3u8DownloadTask(
 
     class Failed(
         originUrl: String,
-        taskId :String,
+        taskId: String,
         coverImageUrl: String?,
         val m3u8Data: M3u8Data,
         val error: Throwable? = null,
@@ -194,7 +198,7 @@ interface TaskStateTransform<T : DownloadTask> {
         throw NotImplementedError()
     }
 
-    fun failed(error: Throwable): M3u8DownloadTask.Failed {
+    fun failed(error: Throwable? = null): M3u8DownloadTask.Failed {
         throw NotImplementedError()
     }
 

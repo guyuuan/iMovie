@@ -28,6 +28,7 @@ import cn.chitanda.app.core.downloader.network.IDownloadNetwork
 import kotlinx.coroutines.withTimeout
 import okio.BufferedSource
 import okio.EOFException
+import timber.log.Timber
 import java.net.URL
 
 /**
@@ -56,7 +57,8 @@ internal class M3u8Parser(
             } else {
                 data
             }
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            Timber.e(t)
             null
         }
     }
