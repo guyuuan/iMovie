@@ -14,8 +14,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.test.runTest
-import okio.Path
-import okio.Path.Companion.toPath
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -81,9 +79,4 @@ class M3u8DownloaderAndroidTest {
     }
 }
 
-class TestDownloadFileManager : DownloadFileManager(basePath = SYSTEM_TEMPORARY_DIRECTORY, SYSTEM) {
-
-    override fun createFilePath(fileName: String, dir: String?): Path {
-        return "$basePath${Path.DIRECTORY_SEPARATOR}${if (dir != null) "$dir${Path.DIRECTORY_SEPARATOR}" else ""}$fileName".toPath()
-    }
-}
+class TestDownloadFileManager : DownloadFileManager(basePath = SYSTEM_TEMPORARY_DIRECTORY, SYSTEM)

@@ -43,14 +43,14 @@ internal class ActualDownloadTaskQueue private constructor(
 
     override fun checkTask(task: ActualDownloadTask) {
         when (task.state) {
-            DownloadTaskState.completed -> {
+            DownloadTaskState.Completed -> {
                 remove(task)
                 taskExecuteRecord.remove(task.id)
                 taskQueueListener.onComplete(task)
                 doNext()
             }
 
-            DownloadTaskState.failed -> {
+            DownloadTaskState.Failed -> {
                 synchronized(taskExecuteRecord) {
                     if (taskExecuteRecord.getOrPut(task.id) { 0 } < maxRetryCount && autoRetry) {
                         taskQueueListener.retryTask(task)
@@ -59,15 +59,15 @@ internal class ActualDownloadTaskQueue private constructor(
                 doNext()
             }
 
-            DownloadTaskState.initially, DownloadTaskState.pending -> {
-                taskQueueListener.executeTask(task)
+            DownloadTaskState.Initially, DownloadTaskState.Pending -> {
+                taskQueueListener.onDownloading(task)
             }
 
-            DownloadTaskState.pause -> {
+            DownloadTaskState.Pause -> {
                 taskQueueListener.onPause(task)
             }
 
-            DownloadTaskState.downloading -> {
+            DownloadTaskState.Downloading -> {
                 synchronized(taskExecuteRecord) {
                     taskExecuteRecord[task.id] = taskExecuteRecord.getOrPut(
                         task.id

@@ -16,17 +16,26 @@ sealed class M3u8DownloadTask(
     override val priority: Int = 0,
     override val createTime: Long,
     override val updateTime: Long,
+    override val savePath: String
 ) : DownloadTask(), TaskStateTransform<ActualDownloadTask> {
 
     class Initially(
-        originUrl: String, taskId: String, coverImageUrl: String?,
+        originUrl: String,
+        taskId: String,
+        coverImageUrl: String?,
         createTime: Long = nowMilliseconds(),
         updateTime: Long = createTime,
+        savePath: String
     ) : M3u8DownloadTask(
-        originUrl, taskId, coverImageUrl, createTime = createTime, updateTime = updateTime
+        originUrl,
+        taskId,
+        coverImageUrl,
+        createTime = createTime,
+        updateTime = updateTime,
+        savePath = savePath
     ) {
         override fun parse(m3u8Data: M3u8Data): Parsed {
-            return Parsed(originUrl, id, m3u8Data, coverImageUrl, createTime, updateTime)
+            return Parsed(originUrl, id, m3u8Data, coverImageUrl, createTime, updateTime, savePath)
         }
     }
 
@@ -37,14 +46,16 @@ sealed class M3u8DownloadTask(
         val m3u8Data: M3u8Data,
         coverImageUrl: String?,
         createTime: Long,
-        updateTime: Long
+        updateTime: Long,
+        savePath: String
     ) : M3u8DownloadTask(
         originUrl,
         taskId,
         coverImageUrl,
-        priority = DownloadTaskState.initially.ordinal,
+        priority = DownloadTaskState.Initially.ordinal,
         createTime,
-        updateTime
+        updateTime,
+        savePath
     ) {
         override fun start(): Downloading {
             return Downloading(
@@ -53,7 +64,8 @@ sealed class M3u8DownloadTask(
                 coverImageUrl,
                 m3u8Data,
                 createTime = createTime,
-                updateTime = nowMilliseconds()
+                updateTime = nowMilliseconds(),
+                savePath
             )
         }
 
@@ -63,7 +75,8 @@ sealed class M3u8DownloadTask(
             m3u8Data,
             coverImageUrl,
             createTime = createTime,
-            updateTime = nowMilliseconds()
+            updateTime = nowMilliseconds(),
+            savePath
         )
     }
 
@@ -73,13 +86,20 @@ sealed class M3u8DownloadTask(
         val m3u8Data: M3u8Data,
         coverImageUrl: String?,
         createTime: Long,
-        updateTime: Long
+        updateTime: Long,
+        savePath: String
     ) : M3u8DownloadTask(
-        originUrl, taskId, coverImageUrl, DownloadTaskState.pending.ordinal, createTime, updateTime
+        originUrl,
+        taskId,
+        coverImageUrl,
+        DownloadTaskState.Pending.ordinal,
+        createTime,
+        updateTime,
+        savePath
     ) {
         override fun start(): Downloading {
             return Downloading(
-                originUrl, id, coverImageUrl, m3u8Data, createTime, nowMilliseconds()
+                originUrl, id, coverImageUrl, m3u8Data, createTime, nowMilliseconds(), savePath
             )
         }
     }
@@ -90,28 +110,37 @@ sealed class M3u8DownloadTask(
         coverImageUrl: String?,
         val m3u8Data: M3u8Data,
         createTime: Long,
-        updateTime: Long
+        updateTime: Long,
+        savePath: String
     ) : M3u8DownloadTask(
         originUrl,
         taskId,
         coverImageUrl,
-        DownloadTaskState.downloading.ordinal,
+        DownloadTaskState.Downloading.ordinal,
         createTime,
-        updateTime
+        updateTime,
+        savePath
     ) {
         override fun pause(): Paused {
             return Paused(
-                originUrl, id, coverImageUrl, m3u8Data, createTime, nowMilliseconds()
+                originUrl, id, coverImageUrl, m3u8Data, createTime, nowMilliseconds(), savePath
             )
         }
 
         override fun complete(): Completed {
-            return Completed(originUrl, id, coverImageUrl, createTime, nowMilliseconds())
+            return Completed(originUrl, id, coverImageUrl, createTime, nowMilliseconds(), savePath)
         }
 
         override fun failed(error: Throwable?): Failed {
             return Failed(
-                originUrl, id, coverImageUrl, m3u8Data, error, createTime, nowMilliseconds()
+                originUrl,
+                id,
+                coverImageUrl,
+                m3u8Data,
+                error,
+                createTime,
+                nowMilliseconds(),
+                savePath
             )
         }
     }
@@ -122,20 +151,42 @@ sealed class M3u8DownloadTask(
         coverImageUrl: String?,
         val m3u8Data: M3u8Data,
         createTime: Long,
-        updateTime: Long
+        updateTime: Long,
+        savePath: String
     ) : M3u8DownloadTask(
         originUrl,
         taskId,
         coverImageUrl,
-        priority = DownloadTaskState.pause.ordinal,
+        priority = DownloadTaskState.Pause.ordinal,
         createTime,
-        updateTime
+        updateTime,
+        savePath
     ) {
         override fun resume(): Downloading {
             return Downloading(
-                originUrl, id, coverImageUrl, m3u8Data, createTime, nowMilliseconds()
+                originUrl, id, coverImageUrl, m3u8Data, createTime, nowMilliseconds(), savePath
             )
         }
+    }
+
+    class Merging(
+        originUrl: String,
+        taskId: String,
+        coverImageUrl: String?,
+        val m3u8Data: M3u8Data,
+        createTime: Long,
+        updateTime: Long,
+        savePath: String
+    ) : M3u8DownloadTask(
+        originUrl,
+        taskId,
+        coverImageUrl,
+        DownloadTaskState.Downloading.ordinal,
+        createTime,
+        updateTime,
+        savePath
+    ) {
+
     }
 
     class Completed(
@@ -143,14 +194,16 @@ sealed class M3u8DownloadTask(
         taskId: String,
         coverImageUrl: String?,
         createTime: Long,
-        updateTime: Long
+        updateTime: Long,
+        savePath: String
     ) : M3u8DownloadTask(
         originUrl,
         taskId,
         coverImageUrl,
-        priority = DownloadTaskState.completed.ordinal,
+        priority = DownloadTaskState.Completed.ordinal,
         createTime,
-        updateTime
+        updateTime,
+        savePath
     )
 
     class Failed(
@@ -160,18 +213,20 @@ sealed class M3u8DownloadTask(
         val m3u8Data: M3u8Data,
         val error: Throwable? = null,
         createTime: Long,
-        updateTime: Long
+        updateTime: Long,
+        savePath: String
     ) : M3u8DownloadTask(
         originUrl,
         taskId,
         coverImageUrl,
-        priority = DownloadTaskState.failed.ordinal,
+        priority = DownloadTaskState.Failed.ordinal,
         createTime,
-        updateTime
+        updateTime,
+        savePath
     ) {
         override fun retry(): Downloading {
             return Downloading(
-                originUrl, id, coverImageUrl, m3u8Data, createTime, nowMilliseconds()
+                originUrl, id, coverImageUrl, m3u8Data, createTime, nowMilliseconds(), savePath
             )
         }
     }
@@ -206,54 +261,76 @@ interface TaskStateTransform<T : DownloadTask> {
         throw NotImplementedError()
     }
 
-    fun retry(): M3u8DownloadTask.Downloading {
+    fun retry(): M3u8DownloadTask {
+        throw NotImplementedError()
+    }
+
+    fun merge(): M3u8DownloadTask.Merging {
         throw NotImplementedError()
     }
 }
 
 fun M3u8DownloadTask.toM3u8TaskEntity(): M3u8TaskEntity {
     val state = when (this) {
-        is M3u8DownloadTask.Completed -> DownloadTaskState.completed
-        is M3u8DownloadTask.Downloading -> DownloadTaskState.downloading
-        is M3u8DownloadTask.Failed -> DownloadTaskState.failed
-        is M3u8DownloadTask.Initially -> DownloadTaskState.initially
-        is M3u8DownloadTask.Parsed -> DownloadTaskState.parsed
-        is M3u8DownloadTask.Paused -> DownloadTaskState.pause
-        is M3u8DownloadTask.Pending -> DownloadTaskState.pending
+        is M3u8DownloadTask.Completed -> DownloadTaskState.Completed
+        is M3u8DownloadTask.Downloading -> DownloadTaskState.Downloading
+        is M3u8DownloadTask.Failed -> DownloadTaskState.Failed
+        is M3u8DownloadTask.Initially -> DownloadTaskState.Initially
+        is M3u8DownloadTask.Parsed -> DownloadTaskState.Parsed
+        is M3u8DownloadTask.Paused -> DownloadTaskState.Pause
+        is M3u8DownloadTask.Pending -> DownloadTaskState.Pending
+        is M3u8DownloadTask.Merging -> DownloadTaskState.Merging
     }
     return M3u8TaskEntity(
-        originUrl, createTime, updateTime, coverImageUrl, state = state, taskId = id
+        originUrl,
+        createTime,
+        updateTime,
+        coverImageUrl,
+        state = state,
+        taskId = id,
+        savePath = savePath
     )
 }
 
 fun M3u8TaskEntity.toM3u8DownloadTask(m3u8Data: M3u8Data? = null): M3u8DownloadTask {
     return when (state) {
-        DownloadTaskState.downloading -> M3u8DownloadTask.Downloading(
-            originUrl, taskId, coverImageUrl, m3u8Data!!, createTime, updateTime
+        DownloadTaskState.Downloading -> M3u8DownloadTask.Downloading(
+            originUrl, taskId, coverImageUrl, m3u8Data!!, createTime, updateTime, savePath
         )
 
-        DownloadTaskState.completed -> M3u8DownloadTask.Completed(
-            originUrl, taskId, coverImageUrl, createTime, updateTime
+        DownloadTaskState.Completed -> M3u8DownloadTask.Completed(
+            originUrl, taskId, coverImageUrl, createTime, updateTime, savePath
         )
 
-        DownloadTaskState.initially -> M3u8DownloadTask.Initially(
-            originUrl, taskId, coverImageUrl, createTime, updateTime
+        DownloadTaskState.Initially -> M3u8DownloadTask.Initially(
+            originUrl, taskId, coverImageUrl, createTime, updateTime, savePath
         )
 
-        DownloadTaskState.failed -> M3u8DownloadTask.Failed(
-            originUrl, taskId, coverImageUrl, m3u8Data!!, error = null, createTime, updateTime
+        DownloadTaskState.Failed -> M3u8DownloadTask.Failed(
+            originUrl,
+            taskId,
+            coverImageUrl,
+            m3u8Data!!,
+            error = null,
+            createTime,
+            updateTime,
+            savePath
         )
 
-        DownloadTaskState.pending -> M3u8DownloadTask.Pending(
-            originUrl, taskId, m3u8Data!!, coverImageUrl, createTime, updateTime
+        DownloadTaskState.Pending -> M3u8DownloadTask.Pending(
+            originUrl, taskId, m3u8Data!!, coverImageUrl, createTime, updateTime, savePath
         )
 
-        DownloadTaskState.pause -> M3u8DownloadTask.Paused(
-            originUrl, taskId, coverImageUrl, m3u8Data!!, createTime, updateTime
+        DownloadTaskState.Pause -> M3u8DownloadTask.Paused(
+            originUrl, taskId, coverImageUrl, m3u8Data!!, createTime, updateTime, savePath
         )
 
-        DownloadTaskState.parsed -> M3u8DownloadTask.Parsed(
-            originUrl, taskId, m3u8Data!!, coverImageUrl, createTime, updateTime
+        DownloadTaskState.Parsed -> M3u8DownloadTask.Parsed(
+            originUrl, taskId, m3u8Data!!, coverImageUrl, createTime, updateTime, savePath
+        )
+
+        DownloadTaskState.Merging -> M3u8DownloadTask.Merging(
+            originUrl, taskId, coverImageUrl, m3u8Data!!, createTime, updateTime, savePath
         )
     }
 }

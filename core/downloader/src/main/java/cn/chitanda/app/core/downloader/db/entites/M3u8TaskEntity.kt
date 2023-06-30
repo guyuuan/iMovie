@@ -19,5 +19,7 @@ data class M3u8TaskEntity(
     val state: DownloadTaskState,
     @PrimaryKey
     @ColumnInfo(name = "task_id")
-    val taskId: String
+    val taskId: String,
+    @ColumnInfo(defaultValue = "")
+    val savePath:String
 )

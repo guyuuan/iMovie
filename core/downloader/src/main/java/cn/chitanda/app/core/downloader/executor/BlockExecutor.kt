@@ -11,13 +11,13 @@ import kotlinx.coroutines.launch
  * @description:
  **/
 class BlockExecutor<T, R>(
-    capacity: Int, private val context: CoroutineScope, private val runnable: suspend (T) -> R
+    capacity: Int, private val scope: CoroutineScope, private val runnable: suspend (T) -> R
 ) {
     private val channel = Channel<Unit>(capacity)
 
-    suspend fun execute(t: T): Job {
-        channel.send(Unit)
-        return with(context) {
+    fun execute(t: T): Job {
+        return  scope.launch{
+            channel.send(Unit)
             channel.runBlock {
                 runnable(t)
             }

@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import cn.chitanda.app.imovie.feature.recently.navigation.recentlyUpdateNavigationRoute
+import cn.chitanda.app.imovie.ui.ext.zero
 
 /**
  * @author: Chen
@@ -36,7 +37,7 @@ fun HomeScreen() {
         bottomBar = {
             HomeBottomBar(homeScreenState)
         },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        contentWindowInsets = WindowInsets.zero()
     ) {
         NavHost(
             modifier = Modifier.padding(it),

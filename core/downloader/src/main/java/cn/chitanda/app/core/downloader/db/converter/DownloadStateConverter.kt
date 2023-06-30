@@ -12,12 +12,12 @@ class DownloadStateConverter {
     @TypeConverter
     fun intToDownloadTaskState(value: Int): DownloadTaskState {
         return when (value) {
-            DownloadTaskState.downloading.ordinal -> DownloadTaskState.downloading
-            DownloadTaskState.pause.ordinal -> DownloadTaskState.pause
-            DownloadTaskState.completed.ordinal -> DownloadTaskState.completed
-            DownloadTaskState.initially.ordinal -> DownloadTaskState.initially
-            DownloadTaskState.failed.ordinal -> DownloadTaskState.failed
-            DownloadTaskState.pending.ordinal -> DownloadTaskState.pending
+            DownloadTaskState.Downloading.ordinal -> DownloadTaskState.Downloading
+            DownloadTaskState.Pause.ordinal -> DownloadTaskState.Pause
+            DownloadTaskState.Completed.ordinal -> DownloadTaskState.Completed
+            DownloadTaskState.Initially.ordinal -> DownloadTaskState.Initially
+            DownloadTaskState.Failed.ordinal -> DownloadTaskState.Failed
+            DownloadTaskState.Pending.ordinal -> DownloadTaskState.Pending
             else -> error("$value can't convert to DownloadTaskState")
         }
     }

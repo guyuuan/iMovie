@@ -70,7 +70,7 @@ internal interface TaskQueueListener<T : DownloadTask> {
     fun onStart(task: T)
     fun onPending(task: T)
 
-    fun executeTask(task: T)
+    fun onDownloading(task: T)
     fun retryTask(task: T)
 
 }

@@ -3,6 +3,7 @@ package cn.chitanda.app.imovie.feature.play.navigation
 import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavOptions
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
@@ -16,7 +17,7 @@ import cn.chitanda.app.imovie.feature.play.PlayScreen
 
 internal const val playIdArgs = "playId"
 internal const val playFromHistoryArgs = "play_from_history"
-internal const val playScreenRoute = "play_screen_route"
+internal const val playScreenRoute = "play/{$playIdArgs}?playFromHistory={$playFromHistoryArgs}"
 
 internal class PlayArgs(val playId: Long, val playFromHistory: Boolean) {
     constructor(savedStateHandle: SavedStateHandle) : this(
@@ -25,13 +26,18 @@ internal class PlayArgs(val playId: Long, val playFromHistory: Boolean) {
     )
 }
 
-fun NavController.navigateToPlay(playId: Long, playFromHistory: Boolean) {
-    this.navigate("$playScreenRoute/$playId/$playFromHistory")
+fun NavController.navigateToPlay(
+    playId: Long,
+    playFromHistory: Boolean,
+    navOptions: NavOptions? = null
+) {
+    this.navigate("play/$playId?playFromHistory=$playFromHistory", navOptions)
 }
 
 fun NavGraphBuilder.playScreen() {
     composable(
-        route = "$playScreenRoute/{$playIdArgs}/{$playFromHistoryArgs}",
+        route = playScreenRoute,
+//        route = "$playScreenRoute/{$playIdArgs}?playFromHistory={$playFromHistoryArgs}",
         arguments = listOf(
             navArgument(playIdArgs) { type = NavType.LongType },
             navArgument(playFromHistoryArgs) { type = NavType.BoolType }

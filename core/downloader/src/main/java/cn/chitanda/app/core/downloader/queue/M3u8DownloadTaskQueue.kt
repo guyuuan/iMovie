@@ -58,7 +58,7 @@ internal class M3u8DownloadTaskQueue private constructor(
             is M3u8DownloadTask.Failed -> {
                 synchronized(taskExecuteRecord) {
                     if (taskExecuteRecord.getOrPut(task.id) { 0 } < maxRetryCount && autoRetry) {
-                        taskQueueListener.executeTask(task)
+                        taskQueueListener.onDownloading(task)
                     } else {
                         taskQueueListener.onFailed(task)
                     }
@@ -70,15 +70,18 @@ internal class M3u8DownloadTaskQueue private constructor(
             }
 
             is M3u8DownloadTask.Parsed -> {
-                taskQueueListener.executeTask(task)
+                taskQueueListener.onDownloading(task)
             }
 
             is M3u8DownloadTask.Paused -> taskQueueListener.onPause(task)
             is M3u8DownloadTask.Pending -> taskQueueListener.onPending(task)
+            is M3u8DownloadTask.Merging -> TODO()
         }
     }
 }
 
 internal interface M3u8TaskQueueListener : TaskQueueListener<M3u8DownloadTask> {
     fun onParse(task: M3u8DownloadTask.Initially)
+
+    fun omMerging(task: M3u8DownloadTask.Merging)
 }

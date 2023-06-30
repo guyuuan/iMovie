@@ -7,8 +7,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
-import okio.Path
-import okio.Path.Companion.toPath
 import org.junit.Before
 import org.junit.Test
 import timber.log.Timber
@@ -37,7 +35,8 @@ class M3u8DownloaderTest {
     @Test
     fun download_m3u8_test() = runBlocking {
 //        val url = "https://v.gsuus.com/play/yb8OZ2oa/index.m3u8"
-        val url = "http://1257120875.vod2.myqcloud.com/0ef121cdvodtransgzp1257120875/3055695e5285890780828799271/v.f230.m3u8"
+        val url =
+            "http://1257120875.vod2.myqcloud.com/0ef121cdvodtransgzp1257120875/3055695e5285890780828799271/v.f230.m3u8"
         downloader.startDownload(url)
         downloader.joinTestBlock()
 //        while (true){}
@@ -51,11 +50,7 @@ class M3u8DownloaderTest {
             md5 == "fb1af886a60c651cff7e0b3680bf92f9"
         }
     }
+
 }
 
-class TestDownloadFileManager : DownloadFileManager(basePath = SYSTEM_TEMPORARY_DIRECTORY, SYSTEM) {
-
-    override fun createFilePath(fileName: String, dir: String?): Path {
-        return "$basePath${Path.DIRECTORY_SEPARATOR}${if (dir != null) "$dir${Path.DIRECTORY_SEPARATOR}" else ""}$fileName".toPath()
-    }
-}
+class TestDownloadFileManager : DownloadFileManager(basePath = SYSTEM_TEMPORARY_DIRECTORY, SYSTEM)

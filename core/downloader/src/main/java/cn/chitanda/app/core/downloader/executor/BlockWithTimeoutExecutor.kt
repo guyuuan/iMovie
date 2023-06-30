@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -12,31 +13,22 @@ import kotlinx.coroutines.withTimeout
  * @description:
  **/
 class BlockWithTimeoutExecutor<T, R>(
-    capacity: Int, private val context: CoroutineScope, private val runnable: suspend (T) -> R
+    capacity: Int, private val scope: CoroutineScope, private val runnable: suspend (T) -> R
 ) {
     private val channel = Channel<Unit>(capacity)
 
-    suspend fun execute(t: T, timeout: (() -> T?)? = null): Job? {
-        return try {
-            withTimeout(1000L) {
-                channel.send(Unit)
-            }
-            with(context) {
+    fun execute(t: T, timeout: (() -> T?)? = null): Job {
+        return scope.launch {
+            try {
+                withTimeout(1000L) {
+                    channel.send(Unit)
+                }
                 channel.runBlock {
                     runnable(t)
                 }
+            } catch (e: TimeoutCancellationException) {
+                timeout?.invoke()
             }
-        } catch (e: TimeoutCancellationException) {
-            timeout?.invoke()
-            null
-//                ?.let {
-//                channel.send(Unit)
-//                with(context) {
-//                    channel.runBlock {
-//                        runnable(it)
-//                    }
-//                }
-//            }
         }
     }
 }

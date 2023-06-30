@@ -1,6 +1,7 @@
 package cn.chitanda.app.core.downloader.repository
 
 import cn.chitanda.app.core.downloader.extension.md5
+import cn.chitanda.app.core.downloader.extension.plus
 import cn.chitanda.app.core.downloader.m3u8.MediaData
 import cn.chitanda.app.core.downloader.task.ActualDownloadTask
 import cn.chitanda.app.core.downloader.task.DownloadTaskState
@@ -8,6 +9,7 @@ import cn.chitanda.app.core.downloader.task.M3u8DownloadTask
 import cn.chitanda.app.core.downloader.utils.nowMilliseconds
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import okio.Path
 
 /**
  * @author: Chen
@@ -19,10 +21,17 @@ class TestTaskRepository : IDownloadTaskRepository {
     private val actual = mutableMapOf<String, ActualDownloadTask>()
     private val lock = Mutex()
     override suspend fun createM3u8DownloadTask(
-        originUrl: String, coverImage: String?
+        originUrl: String, coverImage: String?, downloadDir: Path
     ): M3u8DownloadTask {
         return lock.withLock {
-            val new = M3u8DownloadTask.Initially(originUrl, originUrl.md5(), coverImage)
+            val id = originUrl.md5()
+            val new =
+                M3u8DownloadTask.Initially(
+                    originUrl,
+                    id,
+                    coverImage,
+                    savePath = (downloadDir + id).toString()
+                )
             m3u8[new.id] = new
             new
         }
@@ -36,7 +45,7 @@ class TestTaskRepository : IDownloadTaskRepository {
                 id = actual.size.toString(),
                 originUrl = mediaData.url,
                 parentTaskId = parentTaskId,
-                state = DownloadTaskState.initially,
+                state = DownloadTaskState.Initially,
                 fileName = mediaData.url.substringAfterLast("/"),
                 downloadDir = downloadDir,
                 createTime = nowMilliseconds(),
@@ -57,7 +66,7 @@ class TestTaskRepository : IDownloadTaskRepository {
     override suspend fun getTaskIsFinished(id: String): Boolean {
         return lock.withLock {
             actual.values.filter { it.parentTaskId == id }
-                .none { (it.state != DownloadTaskState.completed && it.state != DownloadTaskState.failed) }
+                .none { (it.state != DownloadTaskState.Completed && it.state != DownloadTaskState.Failed) }
         }
     }
 }

@@ -2,6 +2,7 @@ package cn.chitanda.app.core.downloader.task
 
 import cn.chitanda.app.core.downloader.db.entites.ActualTaskEntity
 import cn.chitanda.app.core.downloader.utils.nowMilliseconds
+import okio.Path
 
 data class ActualDownloadTask(
     override val id: String,
@@ -15,6 +16,7 @@ data class ActualDownloadTask(
     val error: Throwable? = null,
 ) : DownloadTask() {
     override val priority: Int = if (state.ordinal > 1) state.ordinal else 0
+    override val savePath: String = downloadDir + Path.DIRECTORY_SEPARATOR + fileName
 }
 
 fun ActualTaskEntity.toActualDownloadTask(id: String = this.id.toString()): ActualDownloadTask {
@@ -26,7 +28,7 @@ fun ActualTaskEntity.toActualDownloadTask(id: String = this.id.toString()): Actu
         fileName = fileName,
         downloadDir = downloadDir,
         createTime = createTime,
-        updateTime = updateTime
+        updateTime = updateTime,
     )
 }
 

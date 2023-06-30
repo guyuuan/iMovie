@@ -19,8 +19,9 @@ import cn.chitanda.app.core.downloader.db.entites.M3u8TaskEntity
  * @description:
  **/
 @Database(
-    entities = [ActualTaskEntity::class, M3u8TaskEntity::class], version = 2, autoMigrations = [
-        AutoMigration(from = 1, to = 2)
+    entities = [ActualTaskEntity::class, M3u8TaskEntity::class], version = 3, autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3),
     ],
     exportSchema = true
 )
