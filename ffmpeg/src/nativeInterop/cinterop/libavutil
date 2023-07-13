@@ -1,0 +1,7 @@
+headers = hwcontext.h time.h hwcontext_cuda.h intfloat.h error.h detection_bbox.h ambient_viewing_environment.h fifo.h blowfish.h hwcontext_mediacodec.h replaygain.h version.h murmur3.h stereo3d.h samplefmt.h pixdesc.h base64.h rational.h sha.h motion_vector.h uuid.h avconfig.h lfg.h avutil.h hwcontext_vulkan.h xtea.h crc.h hwcontext_vdpau.h frame.h file.h md5.h cast5.h hwcontext_vaapi.h spherical.h ffversion.h hwcontext_opencl.h audio_fifo.h tree.h threadmessage.h attributes.h hdr_dynamic_vivid_metadata.h adler32.h hwcontext_d3d11va.h timecode.h dovi_meta.h tx.h sha512.h hwcontext_dxva2.h display.h buffer.h camellia.h csp.h pixelutils.h hwcontext_drm.h common.h hmac.h eval.h dict.h random_seed.h opt.h mastering_display_metadata.h log.h aes.h macros.h bswap.h rc4.h tea.h cpu.h lzo.h des.h channel_layout.h encryption_info.h twofish.h imgutils.h hwcontext_videotoolbox.h video_enc_params.h mem.h parseutils.h ripemd.h bprint.h hdr_dynamic_metadata.h hwcontext_qsv.h pixfmt.h aes_ctr.h timestamp.h downmix_info.h avassert.h hash.h mathematics.h intreadwrite.h film_grain_params.h avstring.h
+headerFilter = libavcodec/** libavformat/** libavutil/** libswresample/** libswscale/**
+#compilerOpts = -Wreturn-type -Wno-macro-redefined -Wno-deprecated-declarations  -Wno-incompatible-pointer-types-discards-qualifiers
+compilerOpts.android = -D__ANDROID_API__=26
+linkerOpts = -v
+linkerOpts.android = -L{LINK_PATH} -ldl -lc -lm -lavutil
+excludeDependentModules = true

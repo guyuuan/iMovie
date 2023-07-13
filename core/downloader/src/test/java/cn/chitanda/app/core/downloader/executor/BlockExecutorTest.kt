@@ -29,8 +29,8 @@ class BlockExecutorTest {
                 println(1 / b)
             }
 
-                executor.execute(1)?.join()
-                executor.execute(0)?.join()
-                executor.execute(2)?.join()
+            executor.execute(1).join()
+            executor.execute(0).join()
+            executor.execute(2).join()
         }
 }

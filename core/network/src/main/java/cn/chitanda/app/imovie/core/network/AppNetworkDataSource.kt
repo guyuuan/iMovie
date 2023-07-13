@@ -19,7 +19,7 @@ interface AppNetworkDataSource {
 
     suspend fun searchMovie(key: String, count: Int, page: Int): MovieSearchResult
 
-    suspend fun getAppLatestVersion():GithubRelease
+    suspend fun getAppLatestVersion(): GithubRelease
 
-    fun download(url:String, savePath:String):Flow<DownloadState>
+    fun download(url: String, savePath: String): Flow<DownloadState>
 }

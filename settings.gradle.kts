@@ -9,7 +9,7 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         google()
         mavenCentral()
@@ -22,6 +22,7 @@ dependencyResolutionManagement {
 }
 rootProject.name = "iMovie"
 include( ":app")
+include( ":ffmpeg")
 include( ":core:common")
 include( ":core:data")
 include( ":core:media")

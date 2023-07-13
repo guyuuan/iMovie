@@ -1,0 +1,9 @@
+headers = adts_parser.h avcodec.h defs.h version.h vdpau.h codec_par.h qsv.h codec_desc.h videotoolbox.h xvmc.h mediacodec.h d3d11va.h avfft.h codec.h jni.h packet.h version_major.h bsf.h codec_id.h dirac.h avdct.h ac3_parser.h vorbis_parser.h dxva2.h dv_profile.h
+#headerFilter = libavcodec/** libavformat/** libavutil/** libswresample/** libswscale/**
+compilerOpts = -v  -Wreturn-type -Wno-macro-redefined -Wno-deprecated-declarations  -Wno-incompatible-pointer-types-discards-qualifiers
+compilerOpts.android = -D__ANDROID_API__=26
+linkerOpts = -v
+linkerOpts.android = -L{LINK_PATH} -ldl -lc -lm -lavcodec
+#excludeDependentModules = true
+#staticLibraries = libavcodec.a
+#libraryPaths = {LINK_PATH}

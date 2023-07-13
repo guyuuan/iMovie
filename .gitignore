@@ -140,3 +140,7 @@ app/release
 
 */.cxx
 # End of https://www.gitignore.io/api/androidstudio
+ffmpeg/code/
+ffmpeg/src/nativeInterop/cinterop/lib**.def
+/ffmpeg/libs/**/pkgconfig/
+/ffmpeg/libs/**/share/
