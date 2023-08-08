@@ -3,7 +3,7 @@
 plugins {
     id("chitanda.android.app")
     id("chitanda.android.app.compose")
-    id("chitanda.android.hilt")
+    alias(libs.plugins.chitanda.android.hilt)
     id("kotlinx-serialization")
 }
 

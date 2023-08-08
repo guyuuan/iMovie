@@ -1,5 +1,5 @@
 plugins {
-    id("chitanda.android.lib")
+    alias(libs.plugins.chitanda.android.lib)
     id("kotlinx-serialization")
 }
 android {

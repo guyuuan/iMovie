@@ -2,13 +2,11 @@
 //import com.google.protobuf.gradle.generateProtoTasks
 //import com.google.protobuf.gradle.protobuf
 //import com.google.protobuf.gradle.protoc
-import com.google.protobuf.gradle.*
 
-@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
     alias(libs.plugins.protobuf)
-    id("chitanda.android.lib")
-    id("chitanda.android.hilt")
+    alias(libs.plugins.chitanda.android.lib)
+    alias(libs.plugins.chitanda.android.hilt)
 }
 
 android {

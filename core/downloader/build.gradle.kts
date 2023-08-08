@@ -1,7 +1,6 @@
-@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    id("chitanda.android.lib")
-    id("chitanda.android.hilt")
+    alias(libs.plugins.chitanda.android.lib)
+    alias(libs.plugins.chitanda.android.hilt)
     alias(libs.plugins.ksp)
 }
 ksp{

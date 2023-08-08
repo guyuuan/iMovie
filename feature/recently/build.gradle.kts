@@ -1,7 +1,7 @@
 plugins {
-    id("chitanda.android.feature")
-    id("chitanda.android.lib.compose")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.chitanda.android.feature)
+    alias(libs.plugins.chitanda.android.lib.compose)
+
 }
 android{
     namespace = "cn.chitanda.app.imovie.feature.recently"

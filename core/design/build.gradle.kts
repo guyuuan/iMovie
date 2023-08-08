@@ -1,6 +1,6 @@
 plugins{
-    id("chitanda.android.lib")
-    id("chitanda.android.lib.compose")
+    alias(libs.plugins.chitanda.android.lib)
+    alias(libs.plugins.chitanda.android.lib.compose)
 }
 
 android{

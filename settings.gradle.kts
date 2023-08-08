@@ -22,7 +22,7 @@ dependencyResolutionManagement {
 }
 rootProject.name = "iMovie"
 include( ":app")
-include( ":ffmpeg")
+//include( ":ffmpeg")
 include( ":core:common")
 include( ":core:data")
 include( ":core:media")
