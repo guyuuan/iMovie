@@ -13,7 +13,7 @@ plugins {
 val jniLibDir = File(project.buildDir, listOf("generated", "jniLibs").joinToString(File.separator))
 
 kotlin {
-    android()
+    androidTarget()
     val nativeConfigure: KotlinNativeTarget.() -> Unit = {
         compilations {
             val main by getting {

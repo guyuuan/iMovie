@@ -56,7 +56,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
+import androidx.paging.compose.itemKey
 import cn.chitanda.app.imovie.core.model.HistoryResource
 import cn.chitanda.app.imovie.ui.ext.plus
 import cn.chitanda.app.imovie.ui.navigation.LocalNavigateToPlayScreen
@@ -90,11 +90,10 @@ fun HistoryScreen(historyViewModel: HistoryViewModel = hiltViewModel()) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = it + PaddingValues(vertical = 16.dp, horizontal = 12.dp)
         ) {
-            items(key = { item ->
-                item.movieId
-            }, items = history) { hr ->
-                hr?.let { h ->
-                    HistoryItem(history = h,
+            items(key = history.itemKey { h -> h.hashCode() }, count = history.itemCount) { index ->
+                history[index]?.let { h ->
+                    HistoryItem(
+                        history = h,
                         modifier = Modifier
                             .fillMaxWidth()
                             .animateItemPlacement(),

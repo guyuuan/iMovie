@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
 package cn.chitanda.lib.ffmpeg.knative
 
 import kotlinx.cinterop.CPointer
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.memScoped
 import platform.android.ANDROID_LOG_INFO
 import platform.android.JNIEnvVar

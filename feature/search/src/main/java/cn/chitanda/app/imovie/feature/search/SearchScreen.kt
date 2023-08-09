@@ -20,26 +20,20 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.paging.compose.collectAsLazyPagingItems
-import androidx.paging.compose.items
+import androidx.paging.compose.itemKey
 import cn.chitanda.app.imovie.core.model.Movie
 import cn.chitanda.app.imovie.ui.ext.plus
 import cn.chitanda.app.imovie.ui.navigation.LocalNavigateToPlayScreen
@@ -80,7 +74,8 @@ fun SearchScreen(viewModel: SearchScreenViewModel = hiltViewModel()) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             contentPadding = it + PaddingValues(vertical = 16.dp, horizontal = 12.dp)
         ) {
-            items(key = { item -> item.id }, items = searchResult) { movie ->
+            items(key = searchResult.itemKey { m->m.id }, count = searchResult.itemCount) { index ->
+                val movie = searchResult[index]
                 if (movie != null) {
                     SearchResultItem(modifier = Modifier.clickable {
                         navigationToPlay(movie.id, false)

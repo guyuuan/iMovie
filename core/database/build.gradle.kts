@@ -3,6 +3,9 @@ plugins {
     alias(libs.plugins.chitanda.android.hilt)
     alias(libs.plugins.ksp)
 }
+ksp{
+    arg("room.schemaLocation",File(projectDir, "schemas").path)
+}
 android {
     namespace = "cn.chitanda.app.imovie.core.database"
 }
