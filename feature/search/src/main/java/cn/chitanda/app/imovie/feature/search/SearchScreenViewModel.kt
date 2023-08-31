@@ -8,8 +8,6 @@ import androidx.paging.PagingConfig
 import androidx.paging.cachedIn
 import cn.chitanda.app.imovie.core.data.repository.MoviesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.distinctUntilChangedBy
-import kotlinx.coroutines.flow.filter
 import javax.inject.Inject
 
 /**
