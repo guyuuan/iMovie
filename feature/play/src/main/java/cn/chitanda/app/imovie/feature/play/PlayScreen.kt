@@ -82,6 +82,8 @@ import androidx.media3.ui.PlayerView
 import cn.chitanda.app.imovie.core.design.windowsize.LocalWindowSizeClass
 import cn.chitanda.app.imovie.core.model.MovieDetail
 import cn.chitanda.app.imovie.core.model.PlaysSet
+import cn.chitanda.app.imovie.feature.play.ui.ComposePlayerView
+import cn.chitanda.app.imovie.feature.play.ui.rememberPlayerViewState
 import cn.chitanda.app.imovie.ui.ext.collectPartAsState
 import cn.chitanda.app.imovie.ui.ext.zero
 import cn.chitanda.app.imovie.ui.navigation.LocalMainViewModel
@@ -144,20 +146,31 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     Scaffold(contentWindowInsets = WindowInsets.zero()) { padding ->
         Column(modifier = Modifier.padding(padding)) {
             Row(modifier = Modifier.weight(1f)) {
-                VideoView(
+                ComposePlayerView(
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(3f),
+                    state = rememberPlayerViewState(mediaController = mediaController),
                     windowInsetsPadding = when (screenState) {
                         ScreenState.Vertical -> WindowInsets.statusBars
                         ScreenState.Horizontal -> WindowInsets.systemBars
                         else -> WindowInsets.zero()
                     },
-                    isInPip = isInPip,
-                    viewModel = viewModel,
-                    mediaController = mediaController,
-                    fullScreen = fullScreen,
                 )
+//                VideoView(
+//                    modifier = Modifier
+//                        .fillMaxHeight()
+//                        .weight(3f),
+//                    windowInsetsPadding = when (screenState) {
+//                        ScreenState.Vertical -> WindowInsets.statusBars
+//                        ScreenState.Horizontal -> WindowInsets.systemBars
+//                        else -> WindowInsets.zero()
+//                    },
+//                    isInPip = isInPip,
+//                    viewModel = viewModel,
+//                    mediaController = mediaController,
+//                    fullScreen = fullScreen,
+//                )
                 transition.AnimatedVisibility(visible = { state ->
                     state == ScreenState.Horizontal
                 },
