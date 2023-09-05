@@ -7,8 +7,6 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
 import androidx.compose.foundation.gestures.awaitTouchSlopOrCancellation
 import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.horizontalDrag
-import androidx.compose.foundation.gestures.verticalDrag
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -27,10 +25,11 @@ import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.InspectorInfo
 import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.util.fastAny
+import androidx.compose.ui.util.fastFirstOrNull
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
@@ -51,12 +50,15 @@ fun rememberPlayerViewGestureState(
     onHorizontalDelta: (Float) -> Unit = {},
     onLeftDelta: (Float) -> Unit = {},
     onRightDelta: (Float) -> Unit = {},
-    onPressChanged: (Boolean) -> Unit = {}
+    onPressChanged: (Boolean) -> Unit = {},
+    onTouch: () -> Unit = {},
 ): PlayerViewGestureState {
     val onHorizontalDeltaState = rememberUpdatedState(newValue = onHorizontalDelta)
     val onLeftDeltaState = rememberUpdatedState(newValue = onLeftDelta)
     val onRightDeltaState = rememberUpdatedState(newValue = onRightDelta)
     val onPressChangedState = rememberUpdatedState(newValue = onPressChanged)
+    val onTouchState = rememberUpdatedState(newValue = onTouch)
+
     return remember(
         onHorizontalDelta, onLeftDelta, onRightDelta, onPressChanged
     ) {
@@ -64,7 +66,8 @@ fun rememberPlayerViewGestureState(
             onHorizontalDelta = onHorizontalDeltaState.value,
             onLeftDelta = onLeftDeltaState.value,
             onRightDelta = onRightDeltaState.value,
-            onPressChanged = onPressChangedState.value
+            onPressChanged = onPressChangedState.value,
+            onTouch = onTouchState.value
         )
     }
 }
@@ -73,8 +76,7 @@ fun rememberPlayerViewGestureState(
 private class DefaultPlayerViewGestureState(
     onHorizontalDelta: (Float) -> Unit,
     onLeftDelta: (Float) -> Unit,
-    onRightDelta: (Float) -> Unit,
-    onPressChanged: (Boolean) -> Unit
+    onRightDelta: (Float) -> Unit, onPressChanged: (Boolean) -> Unit, onTouch: () -> Unit
 ) : PlayerViewGestureState {
     override val orientation: Orientation = Orientation.Vertical
 
@@ -86,7 +88,6 @@ private class DefaultPlayerViewGestureState(
                 if (startEvent!!.orientation == Orientation.Vertical) {
                     val deltaF =
                         delta.toFloat(Orientation.Vertical) / bounds.toFloat(Orientation.Vertical)
-                    Timber.d("dragBy: vertical $deltaF")
                     if (startEvent!!.startPoint.x < bounds.width / 2) {
                         onLeftDelta(deltaF)
                     } else {
@@ -95,9 +96,6 @@ private class DefaultPlayerViewGestureState(
                 } else {
                     val deltaF =
                         delta.toFloat(Orientation.Horizontal) / bounds.toFloat(Orientation.Horizontal)
-                    Timber.d(
-                        "dragBy: horizontal ${deltaF.times(100)}%"
-                    )
                     onHorizontalDelta(
                         deltaF
                     )
@@ -116,8 +114,15 @@ private class DefaultPlayerViewGestureState(
         }
 
         override fun press(pressed: Boolean) {
-            onPressed = pressed
-            onPressChanged(pressed)
+            if (onPressed != pressed) {
+                onPressed = pressed
+                onPressChanged(pressed)
+            }
+        }
+
+        override fun onTouch() {
+            press(false)
+            onTouch()
         }
 
         override fun onCancel() {
@@ -213,7 +218,7 @@ class PlayerViewGestureModifierNode(
     private val inputNode = delegate(SuspendingPointerInputModifierNode {
         coroutineScope {
             if (!enabled) return@coroutineScope
-            launch(start = CoroutineStart.UNDISPATCHED) {
+            launch(start = CoroutineStart.UNDISPATCHED, context = Dispatchers.Default) {
                 while (isActive) {
                     var event = channel.receive()
                     try {
@@ -231,15 +236,31 @@ class PlayerViewGestureModifierNode(
                             if (event is GestureEvent.DragStopped || event is GestureEvent.Cancelled) {
                                 processDragStopOrCancel()
                             }
-                        } else if (event is GestureEvent.PressStarted) {
+                        } else if (event is GestureEvent.OnTouch) {
                             state.handle(MutatePriority.UserInput) {
-                                press(true)
-                                while (event !is GestureEvent.PressStopped && event !is GestureEvent.Cancelled) {
-                                    event = channel.receive()
+                                onTouch()
+                            }
+                        } else {
+                            when (event) {
+                                is GestureEvent.PressStarted -> {
+                                    state.handle(MutatePriority.UserInput) {
+                                        press(true)
+                                    }
                                 }
-                                if (event is GestureEvent.PressStopped || event is GestureEvent.Cancelled) {
-                                    press(false)
+
+                                is GestureEvent.PressStopped -> {
+                                    state.handle(MutatePriority.UserInput) {
+                                        press(false)
+                                    }
                                 }
+
+                                is GestureEvent.Cancelled -> {
+                                    state.handle(MutatePriority.UserInput) {
+                                        press(false)
+                                    }
+                                }
+
+                                else -> {}
                             }
                         }
                     } catch (e: CancellationException) {
@@ -247,37 +268,32 @@ class PlayerViewGestureModifierNode(
                     }
                 }
             }
-            awaitPointerEventScope {
-                while (isActive) {
-                    with(awaitDownAndSlop(canDrag)) {
-                        first?.let { change ->
-                            var dragSuccess = false
-                            try {
-                                dragSuccess = awaitDrag(
-                                    change, second, channel, reverseDirection
-                                )
-                            } catch (e: CancellationException) {
-                                dragSuccess = false
-                                if (!isActive) throw e
-                            } finally {
-                                channel.trySend(
-                                    if (dragSuccess) {
-                                        GestureEvent.DragStopped
-                                    } else {
-                                        GestureEvent.Cancelled
-                                    }
-                                )
-                            }
-                        } ?: run {
-                            try {
-                                awaitLongPress(channel)
-                            } catch (e: CancellationException) {
-                                channel.trySend(GestureEvent.Cancelled)
+            launch(start = CoroutineStart.UNDISPATCHED, context = Dispatchers.Default) {
+                awaitPointerEventScope {
+                    while (isActive) {
+                        with(awaitDownAndSlop(canDrag, channel)) {
+                            first?.let { change ->
+                                var dragSuccess = false
+                                try {
+                                    dragSuccess = awaitDrag(
+                                        change, second, channel, reverseDirection
+                                    )
+                                } catch (e: CancellationException) {
+                                    dragSuccess = false
+                                    if (!isActive) throw e
+                                } finally {
+                                    channel.trySend(
+                                        if (dragSuccess) {
+                                            GestureEvent.DragStopped
+                                        } else {
+                                            GestureEvent.Cancelled
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-
             }
         }
     })
@@ -335,47 +351,58 @@ class PlayerViewGestureModifierNode(
 }
 
 private suspend fun AwaitPointerEventScope.awaitLongPress(
-    channel: SendChannel<GestureEvent>,
+    channel: SendChannel<GestureEvent>, down: PointerInputChange
 ) {
-    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
     awaitLongPressOrCancellation(down.id)?.let { point ->
         channel.trySend(GestureEvent.PressStarted(point.position))
-        do {
-            val events = awaitPointerEvent(pass = PointerEventPass.Final)
-        } while (events.changes.fastAny { it.id == point.id && it.pressed })
-        channel.trySend(GestureEvent.PressStopped)
+        try {
+            awaitPointerUp(point.id)
+        } catch (_: CancellationException) {
+        } finally {
+            channel.trySend(GestureEvent.PressStopped)
+        }
+    } ?: run {
+        channel.trySend(GestureEvent.OnTouch)
     }
 }
 
+private suspend fun AwaitPointerEventScope.awaitPointerUp(pointerId: PointerId) {
+    if (currentEvent.isPointerUp(pointerId)) {
+        return
+    }
+    while (true) {
+        val event = awaitPointerEvent()
+        val pressEvent = event.changes.fastFirstOrNull { it.id == pointerId } ?: return
+        if (pressEvent.isConsumed || pressEvent.changedToUpIgnoreConsumed()) {
+            return
+        }
+    }
+}
+
+
 private suspend fun AwaitPointerEventScope.awaitDownAndSlop(
-    canDrag: (PointerInputChange) -> Boolean,
+    canDrag: (PointerInputChange) -> Boolean, channel: SendChannel<GestureEvent>,
 ): Pair<PointerInputChange?, Offset> {
-    val down = awaitFirstDown(requireUnconsumed = true, pass = PointerEventPass.Initial)
+    val down = awaitFirstDown(requireUnconsumed = true, pass = PointerEventPass.Main)
     return if (!canDrag(down)) {
         null to Offset.Zero
     } else {
         var initialDelta = Offset.Zero
-//        val postPointerSlop = if (orientation == Orientation.Horizontal) {
-//            { event: PointerInputChange, x: Float ->
-//                event.consume()
-//                initialDelta = initialDelta.copy(x, initialDelta.y)
-//            }
-//        } else {
-//            { event: PointerInputChange, y: Float ->
-//                event.consume()
-//                initialDelta = initialDelta.copy(initialDelta.x, y)
-//            }
-//        }
         val afterSlopResult = awaitTouchSlopOrCancellation(down.id) { event, offset ->
-            event.consume()
-            initialDelta = offset
-            Timber.d("awaitDownAndSlop: init delta = $initialDelta")
+            if (offset.x.absoluteValue > 1 || offset.y.absoluteValue > 1) {
+                event.consume()
+                initialDelta = offset
+            }
         }
-//        val afterSlopResult = if (orientation == Orientation.Horizontal) {
-//            awaitHorizontalTouchSlopOrCancellation(down.id, postPointerSlop)
-//        } else {
-//            awaitVerticalTouchSlopOrCancellation(down.id, postPointerSlop)
-//        }
+        if (afterSlopResult == null) {
+            val pointer: PointerInputChange =
+                if (down.isConsumed || down.changedToUpIgnoreConsumed()) {
+                    awaitFirstDown()
+                } else {
+                    down
+                }
+            awaitLongPress(channel, pointer)
+        }
         afterSlopResult to initialDelta
     }
 }
@@ -406,7 +433,6 @@ private suspend fun AwaitPointerEventScope.awaitDrag(
         if (!event.changedToUpIgnoreConsumed()) {
             val delta = event.positionChange()
             event.consume()
-            Timber.d("awaitDrag: $size, $delta")
             channel.trySend(
                 GestureEvent.DragDelta(
                     size, if (reverseDirection) delta * -1f else delta
@@ -414,29 +440,9 @@ private suspend fun AwaitPointerEventScope.awaitDrag(
             )
         }
     }
-//    return onDragOrUp(startEvent.id, orientation) { event ->
-//
-//        // Dispatch only MOVE events
-//        if (!event.changedToUpIgnoreConsumed()) {
-//            val delta = event.positionChange()
-//            event.consume()
-//            channel.trySend(DragEvent.DragDelta(size, if (reverseDirection) delta * -1f else delta))
-//        }
-//    }
+
 }
 
-private suspend fun AwaitPointerEventScope.onDragOrUp(
-    pointerId: PointerId, orientation: Orientation, onDrag: (PointerInputChange) -> Unit
-): Boolean {
-    drag(pointerId, onDrag)
-    return if (orientation == Orientation.Horizontal) horizontalDrag(
-        pointerId = pointerId,
-        onDrag = onDrag,
-    ) else verticalDrag(
-        pointerId = pointerId,
-        onDrag = onDrag,
-    )
-}
 
 sealed class GestureEvent {
     class DragStarted(val startPoint: Offset, val orientation: Orientation) : GestureEvent()
@@ -444,6 +450,7 @@ sealed class GestureEvent {
 
     class PressStarted(val startPoint: Offset) : GestureEvent()
     data object PressStopped : GestureEvent()
+    data object OnTouch : GestureEvent()
     data object Cancelled : GestureEvent()
     class DragDelta(val bounds: IntSize, val delta: Offset) : GestureEvent()
 }
@@ -467,6 +474,8 @@ interface PlayerViewGestureScope {
 
     fun press(pressed: Boolean) {}
 
+    fun onTouch() {}
+
     fun onCancel() {}
 
 }
@@ -478,3 +487,5 @@ private fun IntSize.toFloat(orientation: Orientation) =
     if (orientation == Orientation.Vertical) this.height else this.width
 
 
+private fun PointerEvent.isPointerUp(pointerId: PointerId): Boolean =
+    changes.fastFirstOrNull { it.id == pointerId }?.pressed != true
