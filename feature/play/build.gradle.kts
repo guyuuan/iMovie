@@ -17,4 +17,5 @@ dependencies{
     implementation(libs.androidx.media3.okhttp)
     implementation(libs.accompanist.systemuicontroller)
     implementation(libs.androidx.appcompat)
+    implementation(libs.kotlinx.datetime)
 }

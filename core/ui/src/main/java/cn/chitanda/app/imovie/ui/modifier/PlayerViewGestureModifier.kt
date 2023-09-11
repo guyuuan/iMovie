@@ -18,6 +18,7 @@ import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerId
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.SuspendingPointerInputModifierNode
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.changedToUpIgnoreConsumed
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.node.DelegatingNode
@@ -135,7 +136,7 @@ private class DefaultPlayerViewGestureState(
     private val mutex = MutatorMutex()
     override suspend fun handle(
         dragPriority: MutatePriority, block: suspend PlayerViewGestureScope.() -> Unit
-    ) = coroutineScope {
+    )  {
         mutex.mutateWith(scope, dragPriority, block)
     }
 }
@@ -222,45 +223,51 @@ class PlayerViewGestureModifierNode(
                 while (isActive) {
                     var event = channel.receive()
                     try {
-                        if (event is GestureEvent.DragStarted) {
-                            processDragStart(event)
-                            state.handle(MutatePriority.UserInput) {
-                                while (event !is GestureEvent.DragStopped && event !is GestureEvent.Cancelled) {
-                                    (event as? GestureEvent.DragDelta)?.let {
-                                        dragBy(it.bounds, it.delta)
+                        when (event) {
+                            is GestureEvent.DragStarted -> {
+                                processDragStart(event)
+                                state.handle(MutatePriority.UserInput) {
+                                    while (event !is GestureEvent.DragStopped && event !is GestureEvent.Cancelled) {
+                                        (event as? GestureEvent.DragDelta)?.let {
+                                            dragBy(it.bounds, it.delta)
+                                        }
+                                        event = channel.receive()
                                     }
-                                    event = channel.receive()
+                                    if (event is GestureEvent.DragStopped || event is GestureEvent.Cancelled) {
+                                        processDragStopOrCancel()
+                                    }
+                                }
+
+                            }
+
+                            is GestureEvent.OnTouch -> {
+                                state.handle(MutatePriority.UserInput) {
+                                    onTouch()
                                 }
                             }
 
-                            if (event is GestureEvent.DragStopped || event is GestureEvent.Cancelled) {
-                                processDragStopOrCancel()
-                            }
-                        } else if (event is GestureEvent.OnTouch) {
-                            state.handle(MutatePriority.UserInput) {
-                                onTouch()
-                            }
-                        } else {
-                            when (event) {
-                                is GestureEvent.PressStarted -> {
-                                    state.handle(MutatePriority.UserInput) {
-                                        press(true)
+                            else -> {
+                                when (event) {
+                                    is GestureEvent.PressStarted -> {
+                                        state.handle(MutatePriority.UserInput) {
+                                            press(true)
+                                        }
                                     }
-                                }
 
-                                is GestureEvent.PressStopped -> {
-                                    state.handle(MutatePriority.UserInput) {
-                                        press(false)
+                                    is GestureEvent.PressStopped -> {
+                                        state.handle(MutatePriority.UserInput) {
+                                            press(false)
+                                        }
                                     }
-                                }
 
-                                is GestureEvent.Cancelled -> {
-                                    state.handle(MutatePriority.UserInput) {
-                                        press(false)
+                                    is GestureEvent.Cancelled -> {
+                                        state.handle(MutatePriority.UserInput) {
+                                            press(false)
+                                        }
                                     }
-                                }
 
-                                else -> {}
+                                    else -> {}
+                                }
                             }
                         }
                     } catch (e: CancellationException) {
@@ -383,27 +390,26 @@ private suspend fun AwaitPointerEventScope.awaitPointerUp(pointerId: PointerId) 
 private suspend fun AwaitPointerEventScope.awaitDownAndSlop(
     canDrag: (PointerInputChange) -> Boolean, channel: SendChannel<GestureEvent>,
 ): Pair<PointerInputChange?, Offset> {
-    val down = awaitFirstDown(requireUnconsumed = true, pass = PointerEventPass.Main)
+    val down = awaitFirstDown()
     return if (!canDrag(down)) {
         null to Offset.Zero
     } else {
         var initialDelta = Offset.Zero
         val afterSlopResult = awaitTouchSlopOrCancellation(down.id) { event, offset ->
-            if (offset.x.absoluteValue > 1 || offset.y.absoluteValue > 1) {
+            if (offset.x.absoluteValue > .1 || offset.y.absoluteValue > .1) {
                 event.consume()
                 initialDelta = offset
             }
         }
-        if (afterSlopResult == null) {
-            val pointer: PointerInputChange =
-                if (down.isConsumed || down.changedToUpIgnoreConsumed()) {
-                    awaitFirstDown()
+        (afterSlopResult to initialDelta).also {
+            if (afterSlopResult == null) {
+                if (down.isConsumed || down.changedToUp()) {
+                    channel.trySend(GestureEvent.OnTouch)
                 } else {
-                    down
+                    awaitLongPress(channel, down)
                 }
-            awaitLongPress(channel, pointer)
+            }
         }
-        afterSlopResult to initialDelta
     }
 }
 

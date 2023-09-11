@@ -5,7 +5,8 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
-import androidx.media3.session.BitmapLoader
+import androidx.media3.common.util.BitmapLoader
+import androidx.media3.common.util.UnstableApi
 import coil.executeBlocking
 import coil.imageLoader
 import coil.request.ImageRequest
@@ -18,6 +19,7 @@ import java.util.concurrent.Executors
  * @createTime: 2023/2/2 18:26
  * @description:
  **/
+@UnstableApi
 class CoilBitmapLoader(private val context: Context) :
     BitmapLoader {
     private val imageLoader = context.imageLoader

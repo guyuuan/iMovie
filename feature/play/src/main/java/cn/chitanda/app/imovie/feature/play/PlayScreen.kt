@@ -107,11 +107,13 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
     val playInfo by viewModel.playUiState.collectPartAsState(part = PlayUiState::playInfo)
     val movie by viewModel.playUiState.collectPartAsState(part = PlayUiState::movie)
     val sizeClass = LocalWindowSizeClass.current.widthSizeClass
-    val fullScreen by remember(playInfo) {
+    val mediaController: MediaController? by remember(playInfo) {
         derivedStateOf {
-            playInfo?.fullScreen ?: false
+            playInfo?.mediaController
         }
     }
+    val playerViewState = rememberPlayerViewState(mediaController = mediaController)
+    val fullScreen = playerViewState.isFullScreen
     val systemBarController = rememberSystemUiController()
     val coroutineScope = rememberCoroutineScope()
     val isInPip by LocalMainViewModel.current.isInPictureInPictureMode.collectAsState()
@@ -136,11 +138,7 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
             else -> 0.0001f
         }
     }
-    val mediaController: MediaController? by remember(playInfo) {
-        derivedStateOf {
-            playInfo?.mediaController
-        }
-    }
+
     val view = LocalView.current
 
     Scaffold(contentWindowInsets = WindowInsets.zero()) { padding ->
@@ -150,12 +148,15 @@ fun PlayScreen(viewModel: PlayScreenViewModel = hiltViewModel()) {
                     modifier = Modifier
                         .fillMaxHeight()
                         .weight(3f),
-                    state = rememberPlayerViewState(mediaController = mediaController),
+                    state = playerViewState,
                     windowInsetsPadding = when (screenState) {
                         ScreenState.Vertical -> WindowInsets.statusBars
                         ScreenState.Horizontal -> WindowInsets.systemBars
                         else -> WindowInsets.zero()
                     },
+                    onPressBack = {
+                        navController.navigateUp()
+                    }
                 )
 //                VideoView(
 //                    modifier = Modifier
