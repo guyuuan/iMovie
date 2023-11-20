@@ -16,7 +16,7 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -178,10 +178,11 @@ private fun AppVersionItem(
                 is SettingUiState.AppVersion.Downloading -> Icons.Default.Downloading
                 else -> Icons.Default.CheckCircle
             }, transitionSpec = {
-                (scaleIn() + fadeIn() with scaleOut() + fadeOut()).using(
+                (scaleIn() + fadeIn() togetherWith scaleOut() + fadeOut()).using(
                     SizeTransform(clip = false)
                 )
-            }) { icon ->
+            }, label = "check_app_version_result_icon"
+            ) { icon ->
                 Icon(
                     imageVector = icon,
                     contentDescription = "",
@@ -219,10 +220,11 @@ private fun AppVersionItem(
 
                     else -> stringResource(id = CommonString.setting_is_newest)
                 }, transitionSpec = {
-                    (slideInVertically { height -> height } + fadeIn() with slideOutVertically { height -> -height } + fadeOut()).using(
+                    (slideInVertically { height -> height } + fadeIn() togetherWith slideOutVertically { height -> -height } + fadeOut()).using(
                         SizeTransform(clip = false)
                     )
-                }) { text ->
+                }, label = "check_app_version_content"
+                ) { text ->
                     Text(
                         text = text, style = MaterialTheme.typography.titleLarge, maxLines = 1,
                         overflow = TextOverflow.Ellipsis
