@@ -56,7 +56,7 @@ private interface RetrofitAppNetworkApi {
     @GET("/play/{id}")
     suspend fun getMovieDetail(@Path("id") id: Long): Movie
 
-    @GET("https://api.github.com/repos/cjchen98/imovie/releases/latest")
+    @GET("https://api.github.com/repos/guyuan/imovie/releases/latest")
     suspend fun getAppLatestVersion(): GithubRelease
 
     @GET
