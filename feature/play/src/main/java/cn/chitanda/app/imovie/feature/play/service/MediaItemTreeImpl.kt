@@ -2,9 +2,7 @@ package cn.chitanda.app.imovie.feature.play.service
 
 import android.net.Uri
 import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaItem.SubtitleConfiguration
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MediaMetadata.FOLDER_TYPE_NONE
 import androidx.media3.common.MimeTypes
 import cn.chitanda.app.imovie.core.media.MediaItemTree
 import cn.chitanda.app.imovie.core.model.MovieDetail
@@ -32,7 +30,7 @@ class MediaItemTreeImpl @Inject constructor() : MediaItemTree {
             MediaMetadata.Builder()
                 .setTitle("${movie.name}-${set.name}")
 //                .setSubtitle(set.name)
-                .setFolderType(FOLDER_TYPE_NONE)
+                .setIsBrowsable(false)
                 .setGenre("Video")
                 .setArtworkUri(Uri.parse(movie.pic))
                 .setIsPlayable(true)

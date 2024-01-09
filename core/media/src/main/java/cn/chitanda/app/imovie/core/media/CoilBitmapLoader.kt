@@ -40,7 +40,11 @@ class CoilBitmapLoader(private val context: Context) :
         return executor.submit<Bitmap> { load(uri) }
     }
 
-    private fun load(uri: Uri): Bitmap {
+    override fun loadBitmap(uri: Uri, options: BitmapFactory.Options?): ListenableFuture<Bitmap> {
+        return executor.submit<Bitmap> { load(uri,options) }
+    }
+
+    private fun load(uri: Uri, options: BitmapFactory.Options?=null): Bitmap {
         val request = imageLoader.executeBlocking(
             ImageRequest.Builder(context).data(uri).build()
         )
