@@ -46,3 +46,7 @@
 
 # @Serializable and @Polymorphic are used at runtime for polymorphic serialization.
 -keepattributes RuntimeVisibleAnnotations,AnnotationDefault
+
+#https://r8.googlesource.com/r8/+/refs/heads/master/compatibility-faq.md
+-keepattributes Signature
+-keep class kotlin.coroutines.Continuation
