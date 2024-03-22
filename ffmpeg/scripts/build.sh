@@ -84,6 +84,7 @@ ffmpeg_configure() {
   FF_CONFIG="${FF_CONFIG} --disable-avdevice"
   FF_CONFIG="${FF_CONFIG} --disable-indevs"
   FF_CONFIG="${FF_CONFIG} --disable-outdevs"
+  FF_CONFIG="${FF_CONFIG} --disable-libmfx"
   FF_CONFIG="${FF_CONFIG} --disable-devices"
   FF_CONFIG="${FF_CONFIG} --disable-debug"
   FF_CONFIG="${FF_CONFIG} --disable-doc"

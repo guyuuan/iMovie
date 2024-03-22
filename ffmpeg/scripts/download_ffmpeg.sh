@@ -6,10 +6,10 @@ curDir=$(pwd)
 
 sourceDir=${curDir}/code
 
-git clone  https://github.com/FFmpeg/FFmpeg  ${sourceDir}
+git clone  -b ${tag} https://github.com/FFmpeg/FFmpeg  ${sourceDir}
 
-cd ${sourceDir}
-
-git checkout -b ${tag}
+#cd ${sourceDir}
+#
+#git checkout
 
 

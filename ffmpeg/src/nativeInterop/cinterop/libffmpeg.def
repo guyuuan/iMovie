@@ -1,0 +1,7 @@
+package = ffmpeg
+compilerOpts = -v -I/usr/local/include
+headers = libavcodec/avcodec.h libavformat/avformat.h libavutil/pixfmt.h libavutil/opt.h \
+          libswscale/swscale.h libswresample/swresample.h
+headerFilter = libavcodec/** libavformat/** libavutil/** \
+          libswscale/** libswresample/**
+linkerOpts = -v -lavutil -lavformat -lavcodec -lswscale -lswresample

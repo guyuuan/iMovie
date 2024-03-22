@@ -1,7 +1,0 @@
-headers = version.h version_major.h avio.h avformat.h
-headerFilter = libavcodec/** libavformat/** libavutil/** libswresample/** libswscale/**
-#compilerOpts = -Wreturn-type -Wno-macro-redefined -Wno-deprecated-declarations  -Wno-incompatible-pointer-types-discards-qualifiers
-compilerOpts.android = -D__ANDROID_API__=26
-linkerOpts = -v
-linkerOpts.android = -L{LINK_PATH} -ldl -lc -lm -lavformat
-excludeDependentModules = true

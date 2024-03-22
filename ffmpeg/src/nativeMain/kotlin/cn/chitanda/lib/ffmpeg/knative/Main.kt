@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalForeignApi::class)
+@file:OptIn(ExperimentalForeignApi::class, ExperimentalNativeApi::class)
 
 package cn.chitanda.lib.ffmpeg.knative
 
@@ -9,6 +9,8 @@ import platform.android.ANDROID_LOG_INFO
 import platform.android.JNIEnvVar
 import platform.android.__android_log_print
 import platform.android.jobject
+import kotlin.experimental.ExperimentalNativeApi
+
 /**
  * @author: Chen
  * @createTime: 2023/7/3 15:51
@@ -20,7 +22,8 @@ internal const val TAG = "ffmpeg_kotlin_native"
 fun startInit(env: CPointer<JNIEnvVar>, thiz: jobject) {
     memScoped {
         init()
-        __android_log_print(ANDROID_LOG_INFO.toInt(), TAG, "start init")
+        ffmpeg.avcodec_version()
+        __android_log_print(ANDROID_LOG_INFO.toInt(), TAG, "start init ,ffmpeg avcodec version ${ffmpeg.avcodec_version()}")
     }
 }
 
