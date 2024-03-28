@@ -24,9 +24,8 @@ kotlin {
                         )
                         linkerOpts += listOf(
                             "-L${
-                                libDir.parentFile.absolutePath
+                                libDir.absolutePath
                             }",
-                            "-L/usr/local/lib",
                         )
                         extraOpts("-verbose","-Xdisable-exception-prettifier")
 
@@ -36,6 +35,18 @@ kotlin {
         }
         binaries {
             sharedLib("knffmpeg") {
+                val abi = abiDirName(target.konanTarget)
+                val libDir = project.file(
+                    listOf(
+                        "libs", abi,
+                    ).joinToString(File.separator)
+                )
+                linkerOpts += listOf(
+                    "-v",
+                    "-L${
+                        libDir.absolutePath
+                    }",
+                )
                 linkTask.doLast {
                     copy {
                         from(outputFile)
@@ -92,6 +103,11 @@ fun abiDirName(target: KonanTarget) = when (target) {
 android {
     namespace = "cn.chitanda.lib.ffmpeg"
     compileSdk = 34
+
+    defaultConfig {
+        minSdk = 26
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
 
     sourceSets {
 

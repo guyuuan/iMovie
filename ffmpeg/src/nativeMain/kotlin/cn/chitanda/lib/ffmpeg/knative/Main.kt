@@ -22,7 +22,6 @@ internal const val TAG = "ffmpeg_kotlin_native"
 fun startInit(env: CPointer<JNIEnvVar>, thiz: jobject) {
     memScoped {
         init()
-        ffmpeg.avcodec_version()
         __android_log_print(ANDROID_LOG_INFO.toInt(), TAG, "start init ,ffmpeg avcodec version ${ffmpeg.avcodec_version()}")
     }
 }
